@@ -1,0 +1,31 @@
+klinikcepat-monorepo/
+├── backend/                  # Porsi Kerja Rekan A (Go Engine)
+│   ├── cmd/
+│   │   └── api/
+│   │       └── main.go       # Entry point aplikasi Go
+│   ├── internal/
+│   │   ├── config/           # Konfigurasi Supabase URL & Service Role Key
+│   │   ├── handlers/         # Controller HTTP (Triage, Queue, Clinic)
+│   │   ├── middleware/       # Validasi JWT Token dari Supabase Auth
+│   │   ├── models/           # Definisi Struct Data (Pasien, Klinik, Gejala)
+│   │   └── repository/       # Logika Kueri ke Supabase/Postgres via Go SQL/ORM
+│   ├── go.mod
+│   └── go.sum
+├── frontend/                 # Porsi Kerja Rekan B (React App)
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/       # UI Kit Reusable (Navbar, Card, Button)
+│   │   ├── context/          # AuthContext untuk menyimpan session user
+│   │   ├── hooks/            # Custom hooks (e.g., useHaversine untuk lokasi)
+│   │   ├── pages/
+│   │   │   ├── Patient/      # Tampilan Cari Klinik, Form Triage, Token Antrean
+│   │   │   ├── AdminKlinik/  # Dashboard Antrean (Merah, Kuning, Hijau)
+│   │   │   └── SuperAdmin/   # Manajemen Tenant & Katalog Gejala
+│   │   ├── services/         # API Fetcher ke Backend Go (bukan langsung ke Supabase)
+│   │   ├── App.jsx
+│   │   └── main.jsx
+│   ├── package.json
+│   └── vite.config.js
+└── supabase/                 # Konfigurasi & Migrasi Basis Data
+    ├── migrations/           # File SQL untuk skema tabel & RLS (Row Level Security)
+    └── seed.sql              # Data awal untuk katalog_gejala
