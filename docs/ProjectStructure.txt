@@ -5,10 +5,11 @@ KlinikCepat/
 │   │       └── main.go       # Entry point aplikasi Go
 │   ├── internal/
 │   │   ├── config/           # Konfigurasi Supabase URL & Service Role Key
-│   │   ├── handlers/         # Controller HTTP (Triage, Queue, Clinic)
-│   │   ├── middleware/       # Validasi JWT Token dari Supabase Auth
+│   │   ├── handlers/         # Controller HTTP (Triage, Queue, Clinic) & Unit Tests
+│   │   ├── middleware/       # Validasi JWT Token dari Supabase Auth & Unit Tests
 │   │   ├── models/           # Definisi Struct Data (Pasien, Klinik, Gejala)
-│   │   └── repository/       # Logika Kueri ke Supabase/Postgres via Go SQL/ORM
+│   │   ├── repository/       # Logika Kueri PostgreSQL & interfaces.go
+│   │   └── services/         # Layanan Triage & Unit Tests
 │   ├── go.mod
 │   └── go.sum
 ├── frontend/                 # Porsi Kerja Rekan B (React App)

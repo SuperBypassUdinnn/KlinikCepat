@@ -24,6 +24,11 @@ Dokumen ini melacak kemajuan pengerjaan aplikasi KlinikCepat secara berkala untu
 *   [x] **API Route & Controller**: 
     - Integrasi endpoint publik (klinik, gejala, submit triage) dan terproteksi admin selesai.
     - Kode berhasil di-build tanpa error dan lulus audit linter `golangci-lint run`.
+*   [x] **Unit Testing & Abstraksi**:
+    - Refactoring repositori menjadi interface (`repository.RepositoryInterface`) untuk pengujian mandiri tanpa koneksi database.
+    - Implementasi `MockRepository` *in-memory* di `internal/handlers/mock_test.go`.
+    - Pengujian unit lengkap untuk Auth Middleware (`auth_test.go`), Triage Service (`triage_service_test.go`), dan seluruh Handlers API (`klinik_handler_test.go`, `gejala_handler_test.go`, `antrean_handler_test.go`).
+    - Lulus pengujian unit dengan status **PASS** (total 31 subtests).
 
 ---
 

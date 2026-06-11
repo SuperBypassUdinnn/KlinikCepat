@@ -144,3 +144,29 @@ Semua rute yang berada di bawah pengawasan admin diproteksi menggunakan **Supaba
     "message": "Status antrean berhasil diperbarui menjadi Selesai"
   }
   ```
+
+---
+
+## 3. Unit Testing & Mocking (Pengujian Mandiri)
+Untuk memfasilitasi pengujian unit yang terisolasi dan mandiri (tanpa koneksi database fisik ataupun koneksi internet), arsitektur database dibungkus menggunakan interface Go.
+
+### A. Abstraksi Repositori
+Seluruh panggilan database didefinisikan melalui interface di `internal/repository/interfaces.go`:
+- `KlinikRepository` (CRUD Klinik)
+- `GejalaRepository` (CRUD Gejala)
+- `AntreanRepository` (CRUD & prioritas Antrean)
+
+Kedua modul utama (`Handler` dan `TriageService`) bergantung pada interface `RepositoryInterface`, bukan pada *concrete struct* pool database langsung.
+
+### B. Mock Repository (*In-Memory*)
+Di dalam berkas pengujian [mock_test.go](file:///home/superbypassudin/.clone/Github/KlinikCepat/backend/internal/handlers/mock_test.go), diimplementasikan struct `MockRepository` yang menggunakan struktur data `map` Go untuk menampung data sementara di memori selama unit test berjalan. Hal ini memungkinkan simulasi operasi database secara instan dan andal.
+
+### C. Cara Menjalankan Tes
+Seluruh pengujian unit (Middleware JWT, Triage Engine, CRUD Handlers) dapat dijalankan dengan perintah Go standar dari direktori `backend/`:
+```bash
+go test -v ./...
+```
+Untuk menguji linter kode:
+```bash
+golangci-lint run
+```
