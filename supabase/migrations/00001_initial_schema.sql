@@ -12,7 +12,7 @@ CREATE TABLE klinik (
 CREATE TABLE katalog_gejala (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nama_gejala VARCHAR(255) NOT NULL,
-    bobot_urgensi INT NOT NULL CHECK (bobot_urgensi >= 1 AND bobot_urgensi <= 10),
+    bobot_urgensi INT NOT NULL CHECK (bobot_urgensi >= 0 AND bobot_urgensi <= 10),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
