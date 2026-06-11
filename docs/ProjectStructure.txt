@@ -1,4 +1,4 @@
-klinikcepat-monorepo/
+KlinikCepat/
 ├── backend/                  # Porsi Kerja Rekan A (Go Engine)
 │   ├── cmd/
 │   │   └── api/

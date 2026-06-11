@@ -45,7 +45,7 @@ $$S_{urgensi} = \sum_{i=1}^{n} (W_i \cdot V_i)$$
 ### 4. Offloading Kalkulasi Spasial (Frontend Logic)
 Komputasi penentuan jarak tidak boleh membebani peladen (*server*). *Backend* hanya menyuplai *array* koordinat statis dari seluruh klinik yang aktif, lalu *frontend* (JavaScript) meminta akses lokasi pengguna via HTML5 Geolocation dan menghitung jarak radius terdekat menggunakan *Haversine formula*:
 
-$$d = 2r \cdot rcsin\left(\sqrt{\sin^2\left(rac{\Delta\phi}{2}ight) + \cos\phi_1\cos\phi_2\sin^2\left(rac{\Delta\lambda}{2}ight)}ight)$$
+$$d = 2r \cdot \arcsin \left(\sqrt{\sin^2\left(\frac{\Delta\phi}{2}\right) + \cos\phi_1 \cos\phi_2 \sin^2\left(\frac{\Delta \lambda}{2}\right)}\right)$$
 
 Setelah nilai jarak ($d$) didapatkan, *frontend* mengurutkan *array* objek tersebut dari nilai terkecil ke terbesar sebelum merendernya ke antarmuka pengguna. Sediakan fitur *Search Bar* teks biasa sebagai mekanisme *fallback* mutlak jika izin GPS ditolak oleh pengguna.
 
