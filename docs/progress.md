@@ -30,23 +30,45 @@ Dokumen ini melacak kemajuan pengerjaan aplikasi KlinikCepat secara berkala untu
     - Pengujian unit lengkap untuk Auth Middleware (`auth_test.go`), Triage Service (`triage_service_test.go`), dan seluruh Handlers API (`klinik_handler_test.go`, `gejala_handler_test.go`, `antrean_handler_test.go`).
     - Lulus pengujian unit dengan status **PASS** (total 31 subtests).
 
+### Sisi Frontend (Scaffolding Selesai)
+*   [x] **Inisialisasi Proyek React + Vite**:
+    - Proyek frontend di-bootstrap menggunakan Vite 6 dengan plugin React.
+    - Konfigurasi proxy API (`/api/*` → `http://localhost:8080`) agar komunikasi ke backend Go berjalan tanpa masalah CORS di lingkungan development.
+*   [x] **Struktur Direktori Sesuai Arsitektur**:
+    - Direktori `src/` diorganisasi berdasarkan peran: `pages/Patient/`, `pages/AdminKlinik/`, `pages/SuperAdmin/`.
+    - Folder terpisah untuk `components/` (UI Kit), `context/` (state management), `hooks/` (custom hooks), dan `services/` (API layer).
+*   [x] **AuthContext (Skeleton)**:
+    - `AuthProvider` dan hook `useAuth` siap digunakan, menunggu integrasi dengan Supabase Auth client SDK.
+*   [x] **Custom Hook `useHaversine`**:
+    - Hook kalkulasi jarak lokasi antara posisi GPS pengguna dan koordinat klinik menggunakan rumus Haversine, siap dipakai di halaman Cari Klinik.
+*   [x] **API Service Layer**:
+    - Modul `services/api.js` sebagai satu-satunya titik komunikasi HTTP ke Go Backend, lengkap dengan injeksi token auth otomatis dari `localStorage`.
+    - Fungsi awal: `submitTriage()`, `getQueue()`, `getClinics()`, `getClinicById()`.
+*   [x] **Routing Dasar**:
+    - React Router v7 terpasang dengan route skeleton untuk tiga aktor: Pasien (`/`), Admin Klinik (`/admin/*`), Super Admin (`/superadmin/*`).
+*   [x] **Dokumentasi README**:
+    - Panduan instalasi dan menjalankan frontend ditambahkan ke README utama proyek.
+
 ---
 
 ## 2. Pekerjaan Berikutnya (Rekomendasi Langkah Selanjutnya)
 
-### A. Sisi Frontend (React App)
-Rekan B dapat mulai mengintegrasikan aplikasi web React dengan endpoint backend yang sudah ada:
-1.  **Integrasi Cari Klinik**: 
-    - Memanggil `GET /api/v1/klinik`.
-    - Meminta hak akses GPS browser, jalankan formula Haversine di client untuk mengurutkan jarak klinik, dan menampilkannya kepada pasien.
+### A. Sisi Frontend — Integrasi UI dengan Backend
+Fondasi scaffolding sudah siap. Langkah selanjutnya adalah membangun halaman dan mengintegrasikan dengan endpoint backend:
+1.  **Halaman Cari Klinik (Pasien)**:
+    - Membangun UI daftar klinik dengan memanggil `GET /api/v1/klinik`.
+    - Menggunakan `useHaversine` untuk mengurutkan klinik berdasarkan jarak terdekat dari posisi GPS pasien.
 2.  **Kuesioner Triage Pasien**:
-    - Memanggil `GET /api/v1/gejala` untuk menampilkan kuesioner input gejala dinamis beserta pilihan keparahan (1-3).
-    - Melakukan POST ke `POST /api/v1/triage` saat menekan tombol daftar, menampilkan status warna hasil triage, nomor antrean, serta estimasi.
+    - Membangun form input gejala dinamis dari `GET /api/v1/gejala` beserta pilihan keparahan (1-3).
+    - Submit ke `POST /api/v1/triage`, lalu tampilkan status warna hasil triage, nomor antrean, dan estimasi waktu.
 3.  **Dashboard Admin Klinik**:
-    - Melakukan otentikasi login admin via Supabase Auth (di client).
-    - Mengirimkan token ke backend pada header `Authorization: Bearer <token>` dan mengambil antrean aktif lewat `GET /api/v1/admin/antrean?klinik_id=<uuid>&status=Menunggu`.
-    - Membuat tombol aksi "Panggil/Selesai" untuk mengubah status via `PUT /api/v1/admin/antrean/{id}/status`.
+    - Integrasi login admin via Supabase Auth client SDK → simpan session di `AuthContext`.
+    - Ambil antrean aktif via `GET /api/v1/admin/antrean?klinik_id=<uuid>&status=Menunggu` dengan token JWT di header.
+    - Tombol aksi "Panggil/Selesai" via `PUT /api/v1/admin/antrean/{id}/status`.
+4.  **Komponen UI Reusable**:
+    - Membangun `Navbar`, `Card`, `Button`, `Modal` di folder `components/`.
 
 ### B. Integrasi Lingkungan (Deployment)
 1.  Menyediakan file `.env` di server deployment backend dengan konfigurasi `DATABASE_URL` dan `SUPABASE_JWT_SECRET` yang valid.
 2.  Deploy backend Go (misal menggunakan Docker, fly.io, Render, atau Railway).
+3.  Deploy frontend (Vercel, Netlify, atau sebagai static build di server yang sama).
