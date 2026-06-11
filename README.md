@@ -29,11 +29,12 @@ KlinikCepat/
 
 ---
 
-## Memulai (Panduan Instalasi Backend)
+## Memulai (Panduan Instalasi)
 
 ### 1. Prasyarat
 Pastikan Anda sudah menginstal:
 - **Golang** (v1.26+)
+- **Node.js** (v20+) dan **npm** (v10+)
 - Akun dan Proyek aktif di **Supabase**
 
 ### 2. Konfigurasi Database & Migrasi
@@ -68,6 +69,21 @@ Jika Anda ingin menerapkan ulang skema basis data di Supabase:
    go run cmd/api/main.go
    ```
    Server backend sekarang aktif di `http://localhost:8080`. Anda dapat mengakses healthcheck di `GET http://localhost:8080/health`.
+
+### 4. Jalankan Frontend
+1. Buka terminal baru, lalu masuk ke direktori `frontend/`:
+   ```bash
+   cd frontend
+   ```
+2. Unduh dependensi npm:
+   ```bash
+   npm install
+   ```
+3. Jalankan development server:
+   ```bash
+   npm run dev
+   ```
+   Aplikasi frontend sekarang aktif di `http://localhost:5173`. Request ke `/api/*` akan otomatis di-*proxy* ke backend di `http://localhost:8080`.
 
 ---
 

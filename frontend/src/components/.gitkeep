@@ -1,0 +1,8 @@
+/**
+ * components/
+ *
+ * Komponen UI yang dapat digunakan kembali secara konsisten.
+ * Contoh: Navbar, Card, Button, Modal, dll.
+ *
+ * Setiap komponen sebaiknya memiliki file JSX sendiri.
+ */
