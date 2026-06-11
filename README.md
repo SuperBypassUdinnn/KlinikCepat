@@ -1,7 +1,6 @@
 # KlinikCepat
 ### B2B Micro-SaaS Triage & Manajemen Antrean Faskes
 > **Tema SDGs 3:** Good Health and Well-being (Kehidupan Sehat dan Sejahtera)  
-> **Target Proyek:** UAS Praktikum Pemrograman Berbasis Web  
 
 ---
 
@@ -12,7 +11,7 @@ Sistem mengkalkulasi skor urgensi pasien berdasarkan input kuesioner gejala seca
 
 ---
 
-## 📂 Struktur Proyek
+## Struktur Proyek
 Aplikasi ini dikembangkan dalam repositori tunggal (*monorepo*) dengan struktur berikut:
 ```text
 KlinikCepat/

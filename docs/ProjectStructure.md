@@ -8,7 +8,7 @@ Dokumen ini mendeskripsikan struktur direktori dan organisasi kode dari reposito
 
 ```text
 KlinikCepat/
-├── backend/                  # Porsi Kerja Rekan A (Go Engine)
+├── backend/                  # (Go Engine)
 │   ├── cmd/
 │   │   └── api/
 │   │       └── main.go       # Entry point aplikasi Go
@@ -21,7 +21,7 @@ KlinikCepat/
 │   │   └── services/         # Layanan Triage & Unit Tests
 │   ├── go.mod
 │   └── go.sum
-├── frontend/                 # Porsi Kerja Rekan B (React App)
+├── frontend/                 # (React App)
 │   ├── src/
 │   │   ├── assets/
 │   │   ├── components/       # UI Kit Reusable (Navbar, Card, Button)
