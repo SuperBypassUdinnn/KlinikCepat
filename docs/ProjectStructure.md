@@ -1,3 +1,12 @@
+# Struktur Proyek: KlinikCepat
+
+Dokumen ini mendeskripsikan struktur direktori dan organisasi kode dari repositori monorepo proyek **KlinikCepat**.
+
+---
+
+## Pohon Direktori
+
+```text
 KlinikCepat/
 ├── backend/                  # Porsi Kerja Rekan A (Go Engine)
 │   ├── cmd/
@@ -30,3 +39,27 @@ KlinikCepat/
 └── supabase/                 # Konfigurasi & Migrasi Basis Data
     ├── migrations/           # File SQL untuk skema tabel & RLS (Row Level Security)
     └── seed.sql              # Data awal untuk katalog_gejala
+```
+
+---
+
+## Deskripsi Direktori Utama
+
+### 1. `backend/`
+Berisi kode sumber untuk API server berbasis Go.
+- **`cmd/api/main.go`**: Menginisialisasi koneksi database, router go-chi, mendaftarkan *middleware*, dan menjalankan peladen HTTP.
+- **`internal/handlers/`**: Menangani permintaan HTTP, validasi payload JSON, dan mengirimkan respon JSON. Juga memuat berkas pengujian unit (`*_test.go`) dan `mock_test.go` untuk testing *in-memory*.
+- **`internal/middleware/`**: Menyediakan middleware verifikasi JWT Supabase Auth untuk rute admin faskes.
+- **`internal/models/`**: Berisi definisi objek Go struct yang dipetakan langsung ke tabel database dan request payload.
+- **`internal/repository/`**: Abstraksi database menggunakan interface (`interfaces.go`) dan implementasi query SQL menggunakan connection pool `pgxpool`.
+- **`internal/services/`**: Memuat triage engine bisnis logic untuk kalkulasi skor urgensi medis.
+
+### 2. `frontend/`
+Aplikasi web klien berbasis React.js (Vite).
+- **`src/components/`**: Komponen UI yang dapat digunakan kembali secara konsisten (Buttons, Cards, Modals).
+- **`src/pages/`**: Dibagi berdasarkan hak akses/aktor: Pasien (B2C), Admin Klinik (B2B), dan Super Admin.
+- **`src/services/`**: Menangani seluruh komunikasi HTTP *fetch* ke Go Backend.
+
+### 3. `supabase/`
+Konfigurasi skema database relasional PostgreSQL.
+- **`migrations/`**: Berisi file-file SQL migrasi beruntun untuk membangun skema tabel dan relasi secara bersih pada instance Supabase.

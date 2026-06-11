@@ -74,6 +74,7 @@ Jika Anda ingin menerapkan ulang skema basis data di Supabase:
 
 ## Dokumentasi Tambahan
 Untuk panduan pengembangan lebih lanjut, Anda dapat merujuk ke berkas dokumentasi internal kami:
+- [Struktur Organisasi Proyek](file:///home/superbypassudin/.clone/Github/KlinikCepat/docs/ProjectStructure.md)
 - [Cetak Biru Proyek (Blueprint)](file:///home/superbypassudin/.clone/Github/KlinikCepat/docs/blueprint_klinikcepat.md)
 - [Arsitektur & Spesifikasi API Backend](file:///home/superbypassudin/.clone/Github/KlinikCepat/docs/backend_architecture.md)
 - [Arsitektur Peran & Alur Pengguna (User Roles)](file:///home/superbypassudin/.clone/Github/KlinikCepat/docs/user_roles_klinikcepat.md)
