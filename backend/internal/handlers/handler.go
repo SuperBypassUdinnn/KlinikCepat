@@ -7,12 +7,12 @@ import (
 
 // Handler menampung semua dependencies controller API
 type Handler struct {
-	Repo          *repository.RepositoryWrapper
+	Repo          repository.RepositoryInterface
 	TriageService *services.TriageService
 }
 
 // NewHandler membuat instance Handler baru
-func NewHandler(repo *repository.RepositoryWrapper, triage *services.TriageService) *Handler {
+func NewHandler(repo repository.RepositoryInterface, triage *services.TriageService) *Handler {
 	return &Handler{
 		Repo:          repo,
 		TriageService: triage,

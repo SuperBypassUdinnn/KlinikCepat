@@ -9,11 +9,11 @@ import (
 
 // TriageService menangani logika bisnis kalkulasi triage
 type TriageService struct {
-	repo *repository.RepositoryWrapper
+	repo repository.RepositoryInterface
 }
 
 // NewTriageService membuat instance TriageService baru
-func NewTriageService(repo *repository.RepositoryWrapper) *TriageService {
+func NewTriageService(repo repository.RepositoryInterface) *TriageService {
 	return &TriageService{repo: repo}
 }
 
