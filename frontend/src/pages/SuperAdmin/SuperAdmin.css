@@ -1,0 +1,80 @@
+/* ─── Super Admin Pages ───────────────────────────────── */
+
+/* Section Header */
+.sa-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  animation: fadeInUp 500ms ease-out;
+}
+
+.sa-header h1 {
+  margin-bottom: var(--space-xs);
+}
+
+.sa-header p {
+  font-size: 0.9375rem;
+}
+
+/* Form inside modal */
+.sa-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.sa-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+/* Coordinate inputs side by side */
+.sa-coord-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+/* Table actions */
+.sa-table-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+/* Delete confirmation */
+.sa-delete-warning {
+  text-align: center;
+  padding: var(--space-md) 0;
+}
+
+.sa-delete-warning-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-md);
+}
+
+.sa-delete-warning p {
+  margin-bottom: var(--space-lg);
+}
+
+.sa-delete-warning .item-name {
+  font-weight: 700;
+  color: var(--color-gray-900);
+}
+
+@media (max-width: 768px) {
+  .sa-header {
+    flex-direction: column;
+  }
+
+  .sa-coord-row {
+    grid-template-columns: 1fr;
+  }
+
+  .sa-table-actions {
+    flex-direction: column;
+  }
+}

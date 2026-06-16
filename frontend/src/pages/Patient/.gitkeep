@@ -1,8 +1,0 @@
-/**
- * pages/Patient/
- *
- * Halaman-halaman untuk aktor Pasien (B2C):
- * - Cari Klinik Terdekat
- * - Form Triage (input gejala)
- * - Token Antrean (hasil setelah triage)
- */

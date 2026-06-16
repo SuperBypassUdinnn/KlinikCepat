@@ -1,0 +1,230 @@
+/* ─── Dashboard Admin Page ────────────────────────────── */
+.dashboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  animation: fadeInUp 500ms ease-out;
+}
+
+.dashboard-header-info h1 {
+  margin-bottom: var(--space-xs);
+}
+
+.dashboard-header-info p {
+  font-size: 0.9375rem;
+}
+
+.dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
+
+/* Klinik Selector */
+.klinik-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--space-xl);
+  animation: fadeInUp 500ms ease-out 100ms both;
+}
+
+.klinik-selector label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-gray-600);
+  white-space: nowrap;
+}
+
+.klinik-selector select {
+  flex: 1;
+}
+
+/* Stats Cards */
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.stat-card {
+  padding: var(--space-lg);
+  animation: fadeInUp 500ms ease-out both;
+}
+
+.stat-card:nth-child(1) { animation-delay: 100ms; }
+.stat-card:nth-child(2) { animation-delay: 160ms; }
+.stat-card:nth-child(3) { animation-delay: 220ms; }
+.stat-card:nth-child(4) { animation-delay: 280ms; }
+
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.stat-card-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.stat-card-icon.merah {
+  background: var(--color-triage-merah-bg);
+  color: var(--color-triage-merah);
+}
+
+.stat-card-icon.kuning {
+  background: var(--color-triage-kuning-bg);
+  color: var(--color-triage-kuning);
+}
+
+.stat-card-icon.hijau {
+  background: var(--color-triage-hijau-bg);
+  color: var(--color-triage-hijau);
+}
+
+.stat-card-icon.total {
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+}
+
+.stat-card-value {
+  font-size: 2rem;
+  font-weight: 800;
+  font-family: var(--font-display);
+  color: var(--color-gray-900);
+  line-height: 1;
+}
+
+/* Queue Table */
+.queue-section {
+  animation: fadeInUp 600ms ease-out 300ms both;
+}
+
+.queue-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.queue-section-header h2 {
+  font-size: 1.25rem;
+}
+
+.auto-refresh-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--color-gray-400);
+  font-weight: 500;
+}
+
+.auto-refresh-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-success);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Action Buttons in Table */
+.queue-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+/* Empty Queue */
+.queue-empty {
+  text-align: center;
+  padding: var(--space-3xl) var(--space-lg);
+}
+
+.queue-empty-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-md);
+  opacity: 0.3;
+}
+
+/* Timestamp */
+.queue-timestamp {
+  font-size: 0.8125rem;
+  color: var(--color-gray-400);
+}
+
+/* Status filter tabs */
+.status-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+}
+
+.status-tab {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-gray-200);
+  background: white;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.status-tab:hover {
+  border-color: var(--color-primary-300);
+  color: var(--color-primary-600);
+}
+
+.status-tab.active {
+  background: var(--color-primary-600);
+  border-color: var(--color-primary-600);
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+  }
+
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .queue-actions {
+    flex-direction: column;
+  }
+
+  .status-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .klinik-selector {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

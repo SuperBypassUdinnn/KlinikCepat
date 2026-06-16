@@ -1,7 +1,0 @@
-/**
- * pages/SuperAdmin/
- *
- * Halaman-halaman untuk aktor Super Admin:
- * - Manajemen Tenant (CRUD klinik)
- * - Katalog Gejala (kelola daftar gejala untuk triage)
- */

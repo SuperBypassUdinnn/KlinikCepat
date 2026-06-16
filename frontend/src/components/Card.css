@@ -1,0 +1,73 @@
+/* ─── Card ────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+  transition: all var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+.card-glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-glass);
+}
+
+.card-flat {
+  box-shadow: none;
+  border: 1px solid var(--color-gray-200);
+}
+
+.card-flat:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-200);
+}
+
+.card-body {
+  padding: var(--space-lg);
+}
+
+.card-header {
+  padding: var(--space-lg) var(--space-lg) 0;
+}
+
+.card-footer {
+  padding: 0 var(--space-lg) var(--space-lg);
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-xs);
+}
+
+.card-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-gray-500);
+}
+
+/* Triage-colored top border accent */
+.card-accent-merah {
+  border-top: 3px solid var(--color-triage-merah);
+}
+
+.card-accent-kuning {
+  border-top: 3px solid var(--color-triage-kuning);
+}
+
+.card-accent-hijau {
+  border-top: 3px solid var(--color-triage-hijau);
+}
+
+.card-accent-primary {
+  border-top: 3px solid var(--color-primary-500);
+}

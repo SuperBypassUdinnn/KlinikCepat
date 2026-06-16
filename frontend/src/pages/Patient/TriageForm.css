@@ -1,0 +1,240 @@
+/* ─── Triage Form Page ────────────────────────────────── */
+.triage-page {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.triage-header {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+  animation: fadeInUp 500ms ease-out;
+}
+
+.triage-header h1 {
+  margin-bottom: var(--space-sm);
+}
+
+.triage-header .clinic-name-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.375rem 1rem;
+  background: var(--color-primary-50);
+  color: var(--color-primary-700);
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Form Card */
+.triage-form-card {
+  animation: fadeInUp 600ms ease-out 100ms both;
+}
+
+.triage-form-card .card-body {
+  padding: var(--space-xl);
+}
+
+/* Steps indicator */
+.triage-step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
+}
+
+.step-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition: all var(--transition-base);
+}
+
+.step-dot.active {
+  background: var(--color-primary-600);
+  color: white;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.step-dot.completed {
+  background: var(--color-success);
+  color: white;
+}
+
+.step-dot.inactive {
+  background: var(--color-gray-200);
+  color: var(--color-gray-500);
+}
+
+.step-line {
+  width: 48px;
+  height: 2px;
+  background: var(--color-gray-200);
+  border-radius: 1px;
+}
+
+.step-line.completed {
+  background: var(--color-success);
+}
+
+/* Gejala Checklist */
+.gejala-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.gejala-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: 1.5px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.gejala-item:hover {
+  border-color: var(--color-primary-300);
+  background: var(--color-primary-50);
+}
+
+.gejala-item.selected {
+  border-color: var(--color-primary-400);
+  background: var(--color-primary-50);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.08);
+}
+
+.gejala-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--color-gray-300);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all var(--transition-fast);
+}
+
+.gejala-item.selected .gejala-checkbox {
+  background: var(--color-primary-600);
+  border-color: var(--color-primary-600);
+  color: white;
+}
+
+.gejala-info {
+  flex: 1;
+}
+
+.gejala-nama {
+  font-weight: 600;
+  color: var(--color-gray-800);
+  margin-bottom: 2px;
+}
+
+.gejala-bobot {
+  font-size: 0.75rem;
+  color: var(--color-gray-400);
+}
+
+.gejala-bobot.high {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+/* Severity Slider */
+.severity-section {
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px dashed var(--color-gray-200);
+}
+
+.severity-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-gray-600);
+  margin-bottom: var(--space-xs);
+}
+
+.severity-options {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.severity-btn {
+  flex: 1;
+  padding: 0.375rem;
+  border: 1.5px solid var(--color-gray-200);
+  border-radius: var(--radius-sm);
+  background: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-gray-600);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.severity-btn:hover {
+  border-color: var(--color-primary-300);
+}
+
+.severity-btn.active-1 {
+  background: var(--color-triage-hijau-bg);
+  border-color: var(--color-triage-hijau);
+  color: #065F46;
+}
+
+.severity-btn.active-2 {
+  background: var(--color-triage-kuning-bg);
+  border-color: var(--color-triage-kuning);
+  color: #92400E;
+}
+
+.severity-btn.active-3 {
+  background: var(--color-triage-merah-bg);
+  border-color: var(--color-triage-merah);
+  color: #991B1B;
+}
+
+/* Form Actions */
+.triage-form-actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+}
+
+.selected-count {
+  font-size: 0.875rem;
+  color: var(--color-gray-500);
+  margin-top: var(--space-md);
+  text-align: center;
+}
+
+.selected-count strong {
+  color: var(--color-primary-600);
+}
+
+@media (max-width: 768px) {
+  .triage-form-card .card-body {
+    padding: var(--space-md);
+  }
+
+  .severity-options {
+    gap: var(--space-xs);
+  }
+
+  .triage-form-actions {
+    flex-direction: column;
+  }
+}

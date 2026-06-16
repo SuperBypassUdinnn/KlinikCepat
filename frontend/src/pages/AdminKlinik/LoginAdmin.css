@@ -1,0 +1,67 @@
+/* ─── Login Admin Page ────────────────────────────────── */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--navbar-height));
+  padding: var(--space-xl) var(--space-md);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 440px;
+  animation: scaleIn 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.login-card .card-body {
+  padding: var(--space-2xl);
+}
+
+.login-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-lg);
+  color: white;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+}
+
+.login-title {
+  text-align: center;
+  margin-bottom: var(--space-xs);
+}
+
+.login-subtitle {
+  text-align: center;
+  font-size: 0.9375rem;
+  color: var(--color-gray-500);
+  margin-bottom: var(--space-xl);
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin: var(--space-lg) 0;
+  color: var(--color-gray-400);
+  font-size: 0.8125rem;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-gray-200);
+}
+
+@media (max-width: 768px) {
+  .login-card .card-body {
+    padding: var(--space-xl) var(--space-md);
+  }
+}
