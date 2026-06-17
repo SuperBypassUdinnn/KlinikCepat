@@ -73,9 +73,11 @@ func main() {
 		
 		r.Post("/triage", h.ProcessTriage)
 
-		// --- RUTE TERPROTEKSI (Admin Klinik / Super Admin) ---
+		// --- RUTE TERPROTEKSI ---
+		// 1. Rute Khusus Superadmin (Mengelola Master Data)
 		r.Group(func(r chi.Router) {
 			r.Use(appMiddleware.AuthMiddleware)
+			r.Use(appMiddleware.RequireRole(repo, "superadmin"))
 
 			// CRUD Klinik
 			r.Post("/klinik", h.CreateKlinik)
@@ -86,6 +88,12 @@ func main() {
 			r.Post("/gejala", h.CreateGejala)
 			r.Put("/gejala/{id}", h.UpdateGejala)
 			r.Delete("/gejala/{id}", h.DeleteGejala)
+		})
+
+		// 2. Rute Admin Klinik (dan Superadmin)
+		r.Group(func(r chi.Router) {
+			r.Use(appMiddleware.AuthMiddleware)
+			r.Use(appMiddleware.RequireRole(repo, "superadmin", "klinik_admin"))
 
 			// Kontrol Antrean Admin
 			r.Get("/admin/antrean", h.GetAntreanByKlinikID)

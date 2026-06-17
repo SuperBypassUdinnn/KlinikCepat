@@ -31,9 +31,15 @@ type AntreanRepository interface {
 	UpdateStatusAntrean(ctx context.Context, id string, status string) error
 }
 
+// UserRepository mendefinisikan kontrak akses data untuk User Roles
+type UserRepository interface {
+	GetUserRole(ctx context.Context, userID string) (string, error)
+}
+
 // RepositoryInterface menggabungkan seluruh fungsionalitas repository database
 type RepositoryInterface interface {
 	KlinikRepository
 	GejalaRepository
 	AntreanRepository
+	UserRepository
 }
