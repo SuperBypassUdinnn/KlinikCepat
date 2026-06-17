@@ -12,6 +12,8 @@ Semua rute yang berada di bawah pengawasan admin diproteksi menggunakan **Supaba
   2. Frontend melakukan permintaan API ke Go Backend dengan menyertakan token pada header HTTP:  
      `Authorization: Bearer <token_jwt>`
   3. Go Backend mengekstrak token, memverifikasi tanda tangannya menggunakan kunci `SUPABASE_JWT_SECRET` dari file `.env`, memeriksa waktu kedaluwarsa (`exp`), dan mengizinkan/menolak akses.
+  4. **Pengecekan Role (RBAC)**: Jika token valid, backend akan mengekstrak UUID pengguna, mengecek rolenya (`superadmin` atau `klinik_admin`) ke tabel `user_roles` di database, dan memastikan pengguna memiliki hak akses (Role) yang sesuai untuk rute yang diakses.
+
 
 ---
 
@@ -99,9 +101,11 @@ Semua rute yang berada di bawah pengawasan admin diproteksi menggunakan **Supaba
 ---
 
 ### B. Rute Terproteksi (Admin Klinik / Super Admin)
-*Memerlukan Header: `Authorization: Bearer <JWT-token>`*
+*Memerlukan Header: `Authorization: Bearer <JWT-token>` dan Role yang Sesuai*
 
-#### 1. CRUD Klinik (Kelola Tenant)
+#### Rute Khusus Super Admin
+Memerlukan Role: `superadmin`
+
 - **POST `/api/v1/klinik`**: Membuat klinik baru (Super Admin).
 - **PUT `/api/v1/klinik/{id}`**: Memperbarui informasi koordinat atau kapasitas klinik.
 - **DELETE `/api/v1/klinik/{id}`**: Menghapus klinik penyewa.
@@ -110,6 +114,9 @@ Semua rute yang berada di bawah pengawasan admin diproteksi menggunakan **Supaba
 - **POST `/api/v1/gejala`**: Menambahkan gejala baru ke kamus sistem.
 - **PUT `/api/v1/gejala/{id}`**: Menyesuaikan deskripsi atau menaikkan/menurunkan bobot urgensi.
 - **DELETE `/api/v1/gejala/{id}`**: Menghapus gejala dari katalog.
+
+#### Rute Admin Klinik
+Memerlukan Role: `superadmin` atau `klinik_admin`
 
 #### 3. Dapatkan Antrean Aktif Faskes
 - **Endpoint**: `GET /api/v1/admin/antrean?klinik_id={uuid}&status={Menunggu/Selesai/Dilewati}`
@@ -147,7 +154,18 @@ Semua rute yang berada di bawah pengawasan admin diproteksi menggunakan **Supaba
 
 ---
 
-## 3. Unit Testing & Mocking (Pengujian Mandiri)
+---
+
+## 3. Keamanan Tingkat Database (RLS)
+Meskipun Supabase menyediakan API otomatis (PostgREST), **seluruh tabel publik KlinikCepat** (`klinik`, `katalog_gejala`, `antrean`, `user_roles`) telah diaktifkan fitur **Row Level Security (RLS)** dengan kebijakan *Deny All*.
+Hal ini dilakukan untuk memblokir total akses pembacaan/penulisan langsung dari sisi *client* (Frontend) yang memegang `anon key`.
+
+**Satu-satunya jalur akses ke data adalah melalui Go Backend kita.**
+Backend Go terhubung menggunakan koneksi Superuser (`postgres`) via `pgxpool`, yang secara otomatis melewati (*bypass*) aturan RLS. Arsitektur ini memastikan bahwa segala verifikasi, validasi, dan otorisasi sepenuhnya dikontrol oleh kode Go kita, bukan oleh API Supabase.
+
+---
+
+## 4. Unit Testing & Mocking (Pengujian Mandiri)
 Untuk memfasilitasi pengujian unit yang terisolasi dan mandiri (tanpa koneksi database fisik ataupun koneksi internet), arsitektur database dibungkus menggunakan interface Go.
 
 ### A. Abstraksi Repositori

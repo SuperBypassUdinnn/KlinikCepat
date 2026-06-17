@@ -29,6 +29,9 @@ Dokumen ini melacak kemajuan pengerjaan aplikasi KlinikCepat secara berkala untu
     - Implementasi `MockRepository` *in-memory* di `internal/handlers/mock_test.go`.
     - Pengujian unit lengkap untuk Auth Middleware (`auth_test.go`), Triage Service (`triage_service_test.go`), dan seluruh Handlers API (`klinik_handler_test.go`, `gejala_handler_test.go`, `antrean_handler_test.go`).
     - Lulus pengujian unit dengan status **PASS** (total 31 subtests).
+*   [x] **Keamanan Tingkat Lanjut (RBAC & RLS)**:
+    - **RBAC**: Implementasi kontrol akses berbasis peran (Superadmin & Admin Klinik) menggunakan tabel `user_roles` dan *middleware* `RequireRole`.
+    - **RLS**: Proteksi data sisi database dengan mengaktifkan *Row Level Security* dan memberlakukan *Deny All* untuk menutup celah eksploitasi API langsung dari sisi klien (Supabase JS Anon Key).
 
 ### Sisi Frontend (Scaffolding Selesai)
 *   [x] **Inisialisasi Proyek React + Vite**:
