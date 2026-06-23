@@ -1,15 +1,22 @@
 package services
 
 import (
+	"KlinikCepat/internal/models"
 	"context"
 	"testing"
-	"KlinikCepat/internal/models"
 )
 
 // mockTriageRepo adalah mock minimal untuk TriageService
 type mockTriageRepo struct {
 	gejalas  []models.Gejala
 	antreans []*models.Antrean
+}
+
+func (m *mockTriageRepo) GetUserAccess(
+	ctx context.Context,
+	userID string,
+) (*models.UserAccess, error) {
+	return nil, nil
 }
 
 func (m *mockTriageRepo) GetAllGejala(ctx context.Context) ([]models.Gejala, error) {
@@ -23,19 +30,31 @@ func (m *mockTriageRepo) CreateAntrean(ctx context.Context, a *models.Antrean) e
 }
 
 // Implementasikan method lain dari RepositoryInterface sebagai dummy
-func (m *mockTriageRepo) CreateKlinik(ctx context.Context, k *models.Klinik) error { return nil }
+func (m *mockTriageRepo) CreateKlinik(ctx context.Context, k *models.Klinik) error  { return nil }
 func (m *mockTriageRepo) GetAllKlinik(ctx context.Context) ([]models.Klinik, error) { return nil, nil }
-func (m *mockTriageRepo) GetKlinikByID(ctx context.Context, id string) (*models.Klinik, error) { return nil, nil }
+func (m *mockTriageRepo) GetKlinikByID(ctx context.Context, id string) (*models.Klinik, error) {
+	return nil, nil
+}
 func (m *mockTriageRepo) UpdateKlinik(ctx context.Context, k *models.Klinik) error { return nil }
-func (m *mockTriageRepo) DeleteKlinik(ctx context.Context, id string) error { return nil }
+func (m *mockTriageRepo) DeleteKlinik(ctx context.Context, id string) error        { return nil }
 func (m *mockTriageRepo) CreateGejala(ctx context.Context, g *models.Gejala) error { return nil }
-func (m *mockTriageRepo) GetGejalaByID(ctx context.Context, id string) (*models.Gejala, error) { return nil, nil }
+func (m *mockTriageRepo) GetGejalaByID(ctx context.Context, id string) (*models.Gejala, error) {
+	return nil, nil
+}
 func (m *mockTriageRepo) UpdateGejala(ctx context.Context, g *models.Gejala) error { return nil }
-func (m *mockTriageRepo) DeleteGejala(ctx context.Context, id string) error { return nil }
-func (m *mockTriageRepo) GetAntreanByID(ctx context.Context, id string) (*models.Antrean, error) { return nil, nil }
-func (m *mockTriageRepo) GetAntreanByKlinikID(ctx context.Context, kID string, status string) ([]models.Antrean, error) { return nil, nil }
-func (m *mockTriageRepo) UpdateStatusAntrean(ctx context.Context, id string, status string) error { return nil }
-func (m *mockTriageRepo) GetUserRole(ctx context.Context, userID string) (string, error) { return "", nil }
+func (m *mockTriageRepo) DeleteGejala(ctx context.Context, id string) error        { return nil }
+func (m *mockTriageRepo) GetAntreanByID(ctx context.Context, id string) (*models.Antrean, error) {
+	return nil, nil
+}
+func (m *mockTriageRepo) GetAntreanByKlinikID(ctx context.Context, kID string, status string) ([]models.Antrean, error) {
+	return nil, nil
+}
+func (m *mockTriageRepo) UpdateStatusAntrean(ctx context.Context, id string, status string) error {
+	return nil
+}
+func (m *mockTriageRepo) GetUserRole(ctx context.Context, userID string) (string, error) {
+	return "", nil
+}
 
 func TestTriageService_ProcessTriage(t *testing.T) {
 	// Mock katalog gejala

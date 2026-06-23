@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"context"
 	"KlinikCepat/internal/models"
+	"context"
 )
 
 // CreateAntrean menambahkan antrean baru ke database

@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"context"
 	"KlinikCepat/internal/models"
+	"context"
 )
 
 // CreateKlinik menambahkan klinik baru ke database

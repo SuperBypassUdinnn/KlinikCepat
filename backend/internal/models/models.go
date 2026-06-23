@@ -33,6 +33,14 @@ type Antrean struct {
 	CreatedAt     time.Time `json:"created_at" db:"created_at"`
 }
 
+// UserAccess menyimpan role aplikasi dan klinik
+// yang diasosiasikan dengan user.
+type UserAccess struct {
+	UserID   string  `json:"user_id"`
+	Role     string  `json:"role"`
+	KlinikID *string `json:"klinik_id"`
+}
+
 // Request & Response Payloads
 
 // GejalaInput adalah sub-struct untuk menampung input skala dari pasien

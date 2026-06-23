@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"KlinikCepat/internal/models"
 	"context"
 	"errors"
 	"time"
-	"KlinikCepat/internal/models"
 )
 
 // MockRepository adalah implementasi in-memory dari repository.RepositoryInterface
@@ -159,5 +159,32 @@ func (m *MockRepository) GetUserRole(ctx context.Context, userID string) (string
 		return "klinik_admin", nil
 	default:
 		return "", nil
+	}
+}
+
+// GetUserAccess mensimulasikan pengambilan role
+// dan klinik user dari database.
+func (m *MockRepository) GetUserAccess(
+	ctx context.Context,
+	userID string,
+) (*models.UserAccess, error) {
+	switch userID {
+	case "superadmin-id":
+		return &models.UserAccess{
+			UserID: "superadmin-id",
+			Role:   "superadmin",
+		}, nil
+
+	case "klinik-admin-id":
+		klinikID := "mock-klinik-id"
+
+		return &models.UserAccess{
+			UserID:   "klinik-admin-id",
+			Role:     "klinik_admin",
+			KlinikID: &klinikID,
+		}, nil
+
+	default:
+		return nil, nil
 	}
 }
