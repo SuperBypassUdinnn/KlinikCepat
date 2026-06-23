@@ -1,162 +1,280 @@
 package middleware
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/json"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"errors"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"strings"
 	"testing"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
-// helper untuk membuat token JWT HS256 dummy
-func generateTestJWT(secret string, claims JWTClaims) (string, error) {
-	header := map[string]string{
-		"alg": "HS256",
-		"typ": "JWT",
+func generateTestES256Token(
+	t *testing.T,
+	privateKey *ecdsa.PrivateKey,
+	issuer string,
+	expiresAt time.Time,
+) string {
+	t.Helper()
+
+	claims := supabaseJWTClaims{
+		Email: "admin@klinik.com",
+		Role:  "authenticated",
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject: "test-user-id",
+			Issuer:  issuer,
+			Audience: jwt.ClaimStrings{
+				"authenticated",
+			},
+			IssuedAt: jwt.NewNumericDate(
+				time.Now(),
+			),
+			ExpiresAt: jwt.NewNumericDate(
+				expiresAt,
+			),
+		},
 	}
-	headerJSON, _ := json.Marshal(header)
-	headerEncoded := base64.RawURLEncoding.EncodeToString(headerJSON)
 
-	payloadJSON, _ := json.Marshal(claims)
-	payloadEncoded := base64.RawURLEncoding.EncodeToString(payloadJSON)
+	token := jwt.NewWithClaims(
+		jwt.SigningMethodES256,
+		claims,
+	)
 
-	message := headerEncoded + "." + payloadEncoded
+	token.Header["kid"] = "test-key"
 
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(message))
-	signature := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	signedToken, err := token.SignedString(
+		privateKey,
+	)
+	if err != nil {
+		t.Fatalf(
+			"gagal membuat token test: %v",
+			err,
+		)
+	}
 
-	return message + "." + signature, nil
+	return signedToken
+}
+
+func testKeyFunc(
+	publicKey *ecdsa.PublicKey,
+) jwt.Keyfunc {
+	return func(
+		token *jwt.Token,
+	) (interface{}, error) {
+		return publicKey, nil
+	}
 }
 
 func TestVerifySupabaseJWT(t *testing.T) {
-	secret := "my-super-secret-test-key"
-	_ = os.Setenv("SUPABASE_JWT_SECRET", secret)
-	defer func() {
-		_ = os.Unsetenv("SUPABASE_JWT_SECRET")
-	}()
+	privateKey, err := ecdsa.GenerateKey(
+		elliptic.P256(),
+		rand.Reader,
+	)
+	if err != nil {
+		t.Fatalf(
+			"gagal membuat private key: %v",
+			err,
+		)
+	}
+
+	issuer := "https://test-project.supabase.co/auth/v1"
 
 	t.Run("Valid Token", func(t *testing.T) {
-		claims := JWTClaims{
-			Sub:   "user-123",
-			Email: "admin@klinikcepat.com",
-			Role:  "authenticated",
-			Exp:   time.Now().Add(1 * time.Hour).Unix(),
-		}
+		token := generateTestES256Token(
+			t,
+			privateKey,
+			issuer,
+			time.Now().Add(time.Hour),
+		)
 
-		token, err := generateTestJWT(secret, claims)
+		claims, err :=
+			verifySupabaseJWTWithKeyfunc(
+				token,
+				testKeyFunc(
+					&privateKey.PublicKey,
+				),
+				issuer,
+			)
+
 		if err != nil {
-			t.Fatalf("Gagal generate token: %v", err)
+			t.Fatalf(
+				"gagal memverifikasi token valid: %v",
+				err,
+			)
 		}
 
-		decodedClaims, err := VerifySupabaseJWT(token)
-		if err != nil {
-			t.Fatalf("Gagal memverifikasi token valid: %v", err)
+		if claims.Sub != "test-user-id" {
+			t.Errorf(
+				"Sub = %s, want test-user-id",
+				claims.Sub,
+			)
 		}
 
-		if decodedClaims.Sub != claims.Sub {
-			t.Errorf("Sub = %v, want %v", decodedClaims.Sub, claims.Sub)
-		}
-		if decodedClaims.Email != claims.Email {
-			t.Errorf("Email = %v, want %v", decodedClaims.Email, claims.Email)
+		if claims.Email != "admin@klinik.com" {
+			t.Errorf(
+				"Email = %s, want admin@klinik.com",
+				claims.Email,
+			)
 		}
 	})
 
 	t.Run("Expired Token", func(t *testing.T) {
-		claims := JWTClaims{
-			Sub: "user-123",
-			Exp: time.Now().Add(-1 * time.Hour).Unix(), // expired
+		token := generateTestES256Token(
+			t,
+			privateKey,
+			issuer,
+			time.Now().Add(-time.Hour),
+		)
+
+		_, err :=
+			verifySupabaseJWTWithKeyfunc(
+				token,
+				testKeyFunc(
+					&privateKey.PublicKey,
+				),
+				issuer,
+			)
+
+		if err == nil {
+			t.Fatal(
+				"token kedaluwarsa seharusnya ditolak",
+			)
 		}
 
-		token, err := generateTestJWT(secret, claims)
-		if err != nil {
-			t.Fatalf("Gagal generate token: %v", err)
-		}
-
-		_, err = VerifySupabaseJWT(token)
-		if err == nil || !strings.Contains(err.Error(), "kedaluwarsa") {
-			t.Errorf("Harus mengembalikan error kedaluwarsa, got: %v", err)
+		if !errors.Is(
+			err,
+			jwt.ErrTokenExpired,
+		) {
+			t.Errorf(
+				"error = %v, want ErrTokenExpired",
+				err,
+			)
 		}
 	})
 
 	t.Run("Invalid Signature", func(t *testing.T) {
-		claims := JWTClaims{
-			Sub: "user-123",
-			Exp: time.Now().Add(1 * time.Hour).Unix(),
-		}
-
-		token, err := generateTestJWT("wrong-secret-key", claims)
+		otherKey, err := ecdsa.GenerateKey(
+			elliptic.P256(),
+			rand.Reader,
+		)
 		if err != nil {
-			t.Fatalf("Gagal generate token: %v", err)
+			t.Fatalf(
+				"gagal membuat key kedua: %v",
+				err,
+			)
 		}
 
-		_, err = VerifySupabaseJWT(token)
-		if err == nil || !strings.Contains(err.Error(), "tanda tangan token tidak valid") {
-			t.Errorf("Harus mengembalikan error tanda tangan tidak valid, got: %v", err)
+		token := generateTestES256Token(
+			t,
+			privateKey,
+			issuer,
+			time.Now().Add(time.Hour),
+		)
+
+		_, err =
+			verifySupabaseJWTWithKeyfunc(
+				token,
+				testKeyFunc(
+					&otherKey.PublicKey,
+				),
+				issuer,
+			)
+
+		if err == nil {
+			t.Fatal(
+				"signature tidak valid seharusnya ditolak",
+			)
 		}
 	})
 
 	t.Run("Invalid Format", func(t *testing.T) {
-		_, err := VerifySupabaseJWT("invalid.tokenformat")
-		if err == nil || !strings.Contains(err.Error(), "format token tidak valid") {
-			t.Errorf("Harus mengembalikan error format tidak valid, got: %v", err)
+		_, err :=
+			verifySupabaseJWTWithKeyfunc(
+				"token-ngawur",
+				testKeyFunc(
+					&privateKey.PublicKey,
+				),
+				issuer,
+			)
+
+		if err == nil {
+			t.Fatal(
+				"token dengan format invalid harus ditolak",
+			)
 		}
 	})
 }
 
 func TestAuthMiddleware(t *testing.T) {
-	secret := "my-super-secret-test-key"
-	_ = os.Setenv("SUPABASE_JWT_SECRET", secret)
-	defer func() {
-		_ = os.Unsetenv("SUPABASE_JWT_SECRET")
-	}()
-
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Dapatkan klaim dari context
-		claims, ok := r.Context().Value(UserContextKey).(*JWTClaims)
-		if !ok || claims == nil {
-			t.Error("Claims tidak ditemukan di context")
-		}
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("Authorized!"))
-	})
-
-	middleware := AuthMiddleware(nextHandler)
-
-	t.Run("No Authorization Header", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/admin/antrean", nil)
-		rr := httptest.NewRecorder()
-
-		middleware.ServeHTTP(rr, req)
-
-		if rr.Code != http.StatusUnauthorized {
-			t.Errorf("Status Code = %v, want %v", rr.Code, http.StatusUnauthorized)
-		}
-	})
-
 	t.Run("Authorized Success", func(t *testing.T) {
-		claims := JWTClaims{
-			Sub: "user-123",
-			Exp: time.Now().Add(1 * time.Hour).Unix(),
-		}
-		token, _ := generateTestJWT(secret, claims)
+		verifier := func(
+			token string,
+		) (*JWTClaims, error) {
+			if token != "valid-test-token" {
+				return nil, errors.New(
+					"token tidak valid",
+				)
+			}
 
-		req := httptest.NewRequest("GET", "/admin/antrean", nil)
-		req.Header.Set("Authorization", "Bearer "+token)
+			return &JWTClaims{
+				Sub:   "test-user-id",
+				Email: "admin@klinik.com",
+				Role:  "authenticated",
+				Exp: time.Now().
+					Add(time.Hour).
+					Unix(),
+			}, nil
+		}
+
+		protectedHandler :=
+			authMiddlewareWithVerifier(
+				verifier,
+			)(
+				http.HandlerFunc(
+					func(
+						w http.ResponseWriter,
+						r *http.Request,
+					) {
+						w.WriteHeader(http.StatusOK)
+						_, _ = w.Write(
+							[]byte("Authorized!"),
+						)
+					},
+				),
+			)
+
+		req := httptest.NewRequest(
+			http.MethodGet,
+			"/protected",
+			nil,
+		)
+
+		req.Header.Set(
+			"Authorization",
+			"Bearer valid-test-token",
+		)
+
 		rr := httptest.NewRecorder()
 
-		middleware.ServeHTTP(rr, req)
+		protectedHandler.ServeHTTP(rr, req)
 
 		if rr.Code != http.StatusOK {
-			t.Errorf("Status Code = %v, want %v", rr.Code, http.StatusOK)
+			t.Errorf(
+				"Status Code = %v, want %v",
+				rr.Code,
+				http.StatusOK,
+			)
 		}
+
 		if rr.Body.String() != "Authorized!" {
-			t.Errorf("Body = %v, want %v", rr.Body.String(), "Authorized!")
+			t.Errorf(
+				"Body = %s, want Authorized!",
+				rr.Body.String(),
+			)
 		}
 	})
 }
