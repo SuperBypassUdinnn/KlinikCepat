@@ -6,8 +6,9 @@
  *
  * Base URL menggunakan prefix /api/v1 sesuai routing di backend Go (go-chi).
  */
+import { supabase } from "./supabaseClient";
 
-const BASE_URL = '/api/v1';
+const BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
 
 /**
  * Helper fetch wrapper dengan JSON parsing dan error handling.
@@ -16,13 +17,21 @@ async function request(endpoint, options = {}) {
   const url = `${BASE_URL}${endpoint}`;
 
   const defaultHeaders = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   };
 
-  // Tambahkan token auth jika tersedia di localStorage
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  // Ambil access token dari session Supabase yang aktif.
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw new Error(`Gagal membaca sesi autentikasi: ${sessionError.message}`);
+  }
+
+  if (session?.access_token) {
+    defaultHeaders.Authorization = `Bearer ${session.access_token}`;
   }
 
   const config = {
@@ -43,9 +52,14 @@ async function request(endpoint, options = {}) {
   return response.json();
 }
 
+// ─── Auth Profile ────────────────────────────────────────
+export function getCurrentUser() {
+  return request("/auth/me");
+}
+
 // ─── Klinik (Publik) ────────────────────────────────────
 export function getClinics() {
-  return request('/klinik');
+  return request("/klinik");
 }
 
 export function getClinicById(id) {
@@ -54,7 +68,7 @@ export function getClinicById(id) {
 
 // ─── Gejala (Publik) ────────────────────────────────────
 export function getGejala() {
-  return request('/gejala');
+  return request("/gejala");
 }
 
 export function getGejalaById(id) {
@@ -63,67 +77,72 @@ export function getGejalaById(id) {
 
 // ─── Triage (Publik) ────────────────────────────────────
 export function submitTriage(payload) {
-  return request('/triage', {
-    method: 'POST',
+  return request("/triage", {
+    method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
 // ─── Antrean Admin (Terproteksi JWT) ────────────────────
-export function getQueue(klinikId, status = 'Menunggu') {
-  return request(`/admin/antrean?klinik_id=${klinikId}&status=${status}`);
+export function getQueue(status = "Menunggu") {
+  const params = new URLSearchParams({
+    status,
+  });
+
+  return request(`/admin/antrean?${params.toString()}`);
 }
 
 export function updateStatusAntrean(antreanId, status) {
   return request(`/admin/antrean/${antreanId}/status`, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify({ status }),
   });
 }
 
 // ─── CRUD Klinik (Terproteksi JWT — Super Admin) ────────
 export function createKlinik(payload) {
-  return request('/klinik', {
-    method: 'POST',
+  return request("/klinik", {
+    method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
 export function updateKlinik(id, payload) {
   return request(`/klinik/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify(payload),
   });
 }
 
 export function deleteKlinik(id) {
   return request(`/klinik/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
 }
 
 // ─── CRUD Gejala (Terproteksi JWT — Super Admin) ────────
 export function createGejala(payload) {
-  return request('/gejala', {
-    method: 'POST',
+  return request("/gejala", {
+    method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
 export function updateGejala(id, payload) {
   return request(`/gejala/${id}`, {
-    method: 'PUT',
+    method: "PUT",
     body: JSON.stringify(payload),
   });
 }
 
 export function deleteGejala(id) {
   return request(`/gejala/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
 }
 
 export default {
+  getCurrentUser,
   getClinics,
   getClinicById,
   getGejala,
