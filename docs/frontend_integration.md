@@ -1,128 +1,668 @@
-# Panduan Integrasi Frontend - Autentikasi Supabase & API Backend
+# Integrasi Frontend KlinikCepat
 
-Dokumen ini berisi panduan teknis bagi tim Frontend untuk melakukan integrasi sistem autentikasi menggunakan Supabase dan cara berkomunikasi dengan API Backend kita.
+Dokumen ini menjelaskan integrasi frontend React dengan Supabase Auth dan backend Go KlinikCepat.
 
-## 1. Persiapan Kredensial Supabase
+**Pembaruan terakhir:** 24 Juni 2026
 
-Tim Frontend akan membutuhkan `Supabase URL` dan `Anon Key` untuk berinteraksi dengan layanan Supabase dari sisi klien (browser).
+---
 
-> [!WARNING]
-> **JANGAN PERNAH** menggunakan atau menyimpan kunci `service_role` (secret) di kode Frontend. Kunci tersebut memiliki akses admin penuh yang bisa mem-bypass semua aturan keamanan. Hanya gunakan `Anon Key` (public) di Frontend.
+## 1. Arsitektur Integrasi
 
-Dapatkan kredensial ini dari Admin Proyek (yang memiliki akses Dasbor Supabase) atau lihat di file `.env` Frontend jika sudah disediakan:
-- `VITE_SUPABASE_URL`: (contoh: `https://xxxxxx.supabase.co`)
-- `VITE_SUPABASE_ANON_KEY`: (contoh: `eyJhbGciOiJIUzI1NiIsInR5c...`)
+Frontend KlinikCepat menggunakan:
 
-## 2. Instalasi SDK Supabase
+* React
+* Vite
+* React Router
+* Supabase JavaScript Client
+* Backend REST API berbasis Go
 
-Pastikan modul `@supabase/supabase-js` sudah terinstal di proyek Frontend.
+Alur komunikasinya:
+
+```text
+React Frontend
+    │
+    ├── Supabase Auth
+    │       └── login, session, access token
+    │
+    └── Backend API
+            ├── data klinik
+            ├── katalog gejala
+            ├── triage
+            ├── antrean
+            └── CRUD superadmin
+```
+
+Supabase Auth hanya menangani identitas dan session pengguna.
+
+Role aplikasi seperti `superadmin` dan `klinik_admin` berasal dari tabel `user_roles` melalui backend.
+
+---
+
+## 2. Environment Variable
+
+Frontend menggunakan environment variable berikut:
+
+```env
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+VITE_API_URL=/api/v1
+```
+
+Keterangan:
+
+* `VITE_SUPABASE_URL`
+  URL project Supabase.
+
+* `VITE_SUPABASE_ANON_KEY`
+  Public anon key Supabase.
+
+* `VITE_API_URL`
+  Base URL backend API.
+
+Untuk development lokal:
+
+```env
+VITE_API_URL=/api/v1
+```
+
+Vite proxy meneruskan request `/api` ke backend lokal.
+
+Untuk deployment dengan domain backend terpisah:
+
+```env
+VITE_API_URL=https://api.example.com/api/v1
+```
+
+File `.env` yang berisi kredensial tidak boleh dimasukkan ke Git.
+
+---
+
+## 3. Supabase Client
+
+Supabase client dibuat pada:
+
+```text
+frontend/src/services/supabaseClient.js
+```
+
+Contoh:
+
+```js
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl =
+  import.meta.env.VITE_SUPABASE_URL;
+
+const supabaseAnonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(
+  supabaseUrl,
+  supabaseAnonKey,
+);
+```
+
+Frontend hanya menggunakan anon key.
+
+Service role key tidak boleh diletakkan di frontend.
+
+---
+
+## 4. API Service
+
+Semua komunikasi dengan backend dipusatkan pada:
+
+```text
+frontend/src/services/api.js
+```
+
+Base URL:
+
+```js
+const BASE_URL =
+  import.meta.env.VITE_API_URL || '/api/v1';
+```
+
+### 4.1 Session Token
+
+Sebelum mengirim request, frontend mengambil session aktif dari Supabase:
+
+```js
+const {
+  data: { session },
+  error: sessionError,
+} = await supabase.auth.getSession();
+```
+
+Jika access token tersedia, frontend menambahkan header:
+
+```http
+Authorization: Bearer <access_token>
+```
+
+Contoh:
+
+```js
+if (session?.access_token) {
+  defaultHeaders.Authorization =
+    `Bearer ${session.access_token}`;
+}
+```
+
+Frontend tidak menyimpan salinan access token secara manual melalui:
+
+```js
+localStorage.setItem('access_token', token);
+```
+
+Supabase menjadi satu-satunya sumber session.
+
+---
+
+## 5. Request Helper
+
+Contoh struktur helper request:
+
+```js
+async function request(endpoint, options = {}) {
+  const url = `${BASE_URL}${endpoint}`;
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw new Error(
+      `Gagal membaca sesi: ${sessionError.message}`,
+    );
+  }
+
+  if (session?.access_token) {
+    headers.Authorization =
+      `Bearer ${session.access_token}`;
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      ...headers,
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const errorBody = await response
+      .json()
+      .catch(() => ({}));
+
+    throw new Error(
+      errorBody.error ||
+        `Request gagal dengan status ${response.status}`,
+    );
+  }
+
+  return response.json();
+}
+```
+
+---
+
+## 6. Endpoint Publik
+
+Endpoint berikut tidak membutuhkan login:
+
+```http
+GET /api/v1/klinik
+GET /api/v1/klinik/{id}
+GET /api/v1/gejala
+GET /api/v1/gejala/{id}
+POST /api/v1/triage
+```
+
+Contoh fungsi:
+
+```js
+export function getClinics() {
+  return request('/klinik');
+}
+
+export function getGejala() {
+  return request('/gejala');
+}
+
+export function submitTriage(payload) {
+  return request('/triage', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+```
+
+Walaupun request helper dapat menyertakan token jika session tersedia, endpoint publik tidak bergantung pada token.
+
+---
+
+## 7. Endpoint Profil Auth
+
+Setelah session Supabase ditemukan, frontend memanggil:
+
+```http
+GET /api/v1/auth/me
+```
+
+Fungsi API:
+
+```js
+export function getCurrentUser() {
+  return request('/auth/me');
+}
+```
+
+Contoh respons Admin Klinik:
+
+```json
+{
+  "id": "uuid-user",
+  "email": "admin@klinik.com",
+  "role": "klinik_admin",
+  "klinik_id": "uuid-klinik"
+}
+```
+
+Contoh respons Superadmin:
+
+```json
+{
+  "id": "uuid-user",
+  "email": "superadmin@klinik.com",
+  "role": "superadmin",
+  "klinik_id": null
+}
+```
+
+Role aplikasi tidak diambil langsung dari metadata JWT frontend.
+
+Backend mengambil role dari tabel `user_roles`.
+
+---
+
+## 8. AuthContext
+
+State autentikasi dikelola pada:
+
+```text
+frontend/src/context/AuthContext.jsx
+```
+
+Context menyimpan:
+
+```text
+user
+profile
+role
+clinicId
+loading
+authError
+```
+
+Keterangan:
+
+* `user`
+  User dari Supabase Auth.
+
+* `profile`
+  Respons lengkap dari `/auth/me`.
+
+* `role`
+  `superadmin` atau `klinik_admin`.
+
+* `clinicId`
+  ID klinik yang terkait dengan Admin Klinik.
+
+* `loading`
+  Status pemeriksaan session.
+
+* `authError`
+  Error saat sinkronisasi session dan role.
+
+### 8.1 Sinkronisasi Session
+
+Alurnya:
+
+```text
+Aplikasi dibuka
+→ Supabase getSession()
+→ session ditemukan
+→ GET /api/v1/auth/me
+→ simpan profile, role, dan clinicId
+```
+
+Jika session tidak tersedia:
+
+```text
+user = null
+profile = null
+role = null
+clinicId = null
+```
+
+### 8.2 Login
+
+Login dilakukan melalui:
+
+```js
+supabase.auth.signInWithPassword({
+  email,
+  password,
+});
+```
+
+Setelah login berhasil, frontend menunggu respons `/auth/me`.
+
+Fungsi `signIn` mengembalikan profile aplikasi:
+
+```js
+const currentUser = await signIn(
+  email,
+  password,
+);
+```
+
+Redirect dilakukan berdasarkan role:
+
+```js
+if (currentUser.role === 'superadmin') {
+  navigate('/superadmin/klinik');
+}
+
+if (currentUser.role === 'klinik_admin') {
+  navigate('/admin/dashboard');
+}
+```
+
+### 8.3 Logout
+
+Logout dilakukan melalui:
+
+```js
+await supabase.auth.signOut();
+```
+
+Setelah logout, state autentikasi dibersihkan.
+
+---
+
+## 9. Role-Based Routing
+
+Route dilindungi menggunakan komponen:
+
+```text
+frontend/src/components/ProtectedRoute.jsx
+```
+
+Contoh Admin Klinik:
+
+```jsx
+<ProtectedRoute
+  allowedRoles={['klinik_admin']}
+>
+  <DashboardAdmin />
+</ProtectedRoute>
+```
+
+Contoh Superadmin:
+
+```jsx
+<ProtectedRoute
+  allowedRoles={['superadmin']}
+>
+  <ManajemenKlinik />
+</ProtectedRoute>
+```
+
+### Perilaku Route
+
+Pengguna tanpa session:
+
+```text
+→ /admin/login
+```
+
+Admin Klinik membuka route Superadmin:
+
+```text
+→ /admin/dashboard
+```
+
+Superadmin membuka dashboard Admin Klinik:
+
+```text
+→ /superadmin/klinik
+```
+
+Frontend route protection merupakan perlindungan UX.
+
+Backend tetap menjadi sumber otorisasi utama.
+
+---
+
+## 10. Navigasi Berdasarkan Role
+
+Navbar membaca `user` dan `role` dari AuthContext.
+
+### Pengguna publik
+
+Menu:
+
+```text
+Cari Klinik
+Login Admin
+```
+
+### Admin Klinik
+
+Menu:
+
+```text
+Dashboard
+Halaman Pasien
+Logout
+```
+
+### Superadmin
+
+Menu:
+
+```text
+Kelola Klinik
+Kelola Gejala
+Halaman Pasien
+Logout
+```
+
+Navbar tidak menentukan akses berdasarkan URL saja.
+
+Menu ditampilkan berdasarkan role pengguna.
+
+---
+
+## 11. Integrasi Dashboard Admin Klinik
+
+Admin Klinik mengambil antrean melalui:
+
+```http
+GET /api/v1/admin/antrean?status=Menunggu
+```
+
+Frontend tidak mengirimkan `klinik_id`.
+
+Contoh fungsi:
+
+```js
+export function getQueue(
+  status = 'Menunggu',
+) {
+  const params = new URLSearchParams({
+    status,
+  });
+
+  return request(
+    `/admin/antrean?${params.toString()}`,
+  );
+}
+```
+
+Backend menentukan `klinik_id` berdasarkan user yang login.
+
+Frontend tidak menampilkan dropdown untuk memilih klinik.
+
+### Update Status
+
+```js
+export function updateStatusAntrean(
+  antreanId,
+  status,
+) {
+  return request(
+    `/admin/antrean/${antreanId}/status`,
+    {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    },
+  );
+}
+```
+
+Backend memastikan antrean tersebut merupakan milik klinik Admin yang login.
+
+---
+
+## 12. Integrasi Superadmin
+
+Superadmin dapat melakukan CRUD klinik:
+
+```http
+POST /api/v1/klinik
+PUT /api/v1/klinik/{id}
+DELETE /api/v1/klinik/{id}
+```
+
+Superadmin juga dapat melakukan CRUD gejala:
+
+```http
+POST /api/v1/gejala
+PUT /api/v1/gejala/{id}
+DELETE /api/v1/gejala/{id}
+```
+
+Request tersebut menggunakan token Supabase yang sama.
+
+Backend memeriksa bahwa role pengguna adalah `superadmin`.
+
+---
+
+## 13. Penanganan Error
+
+API service membaca error JSON dari backend:
+
+```json
+{
+  "error": "Pesan error"
+}
+```
+
+Status yang umum:
+
+```text
+400 Bad Request
+401 Unauthorized
+403 Forbidden
+404 Not Found
+500 Internal Server Error
+```
+
+Contoh arti:
+
+* `401 Unauthorized`
+  Token tidak tersedia, tidak valid, atau expired.
+
+* `403 Forbidden`
+  User valid tetapi role atau kliniknya tidak diizinkan.
+
+* `404 Not Found`
+  Data tidak ditemukan atau berada di luar scope tenant.
+
+Frontend menampilkan pesan error melalui state komponen atau `authError`.
+
+---
+
+## 14. Keamanan
+
+Frontend tidak boleh dianggap sebagai pengaman utama.
+
+Pengguna masih dapat:
+
+* mengubah JavaScript melalui DevTools;
+* memodifikasi request;
+* mencoba URL secara langsung;
+* mengubah query parameter;
+* memanggil backend tanpa UI.
+
+Karena itu backend tetap memvalidasi:
+
+* JWT;
+* role;
+* `klinik_id`;
+* kepemilikan antrean;
+* endpoint yang diperbolehkan.
+
+Frontend hanya meningkatkan UX dengan menyembunyikan menu dan route yang tidak relevan.
+
+---
+
+## 15. Testing Frontend
+
+Validasi build:
 
 ```bash
-npm install @supabase/supabase-js
+cd frontend
+npm run build
 ```
 
-## 3. Inisialisasi Klien Supabase
+Manual test:
 
-Buat file konfigurasi (misal: `src/lib/supabase.js` atau `src/config/supabase.js`) untuk melakukan inisialisasi klien Supabase. Klien ini akan digunakan di seluruh aplikasi untuk urusan autentikasi.
-
-```javascript
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+```text
+Pasien membuka halaman publik
+Admin Klinik login
+Admin Klinik diarahkan ke dashboard
+Admin Klinik tidak dapat membuka route Superadmin
+Superadmin login
+Superadmin diarahkan ke halaman kelola klinik
+Superadmin tidak dapat membuka dashboard Admin Klinik
+Session bertahan setelah refresh
+Logout membersihkan session
+Navbar berubah berdasarkan role
 ```
 
-## 4. Contoh Implementasi Login di Frontend
+---
 
-Gunakan fungsi `signInWithPassword` dari klien Supabase untuk melakukan login menggunakan Email dan Password.
+## 16. Fitur yang Belum Diimplementasikan
 
-```javascript
-// Contoh pemanggilan login di komponen React/Vue
-import { supabase } from '../lib/supabase'
+Integrasi berikut masih berstatus Planned:
 
-const handleLogin = async (email, password) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: email,
-    password: password,
-  })
-
-  if (error) {
-    console.error('Login gagal:', error.message)
-    // Tampilkan pesan error ke user (misal: Email/Password salah)
-    return null
-  }
-  
-  console.log('Login sukses!', data.user)
-  // Lakukan redirect ke halaman dashboard atau simpan state login
-  return data.session
-}
-```
-
-Fungsi pendukung lainnya yang mungkin dibutuhkan:
-- Logout: `await supabase.auth.signOut()`
-- Cek Sesi Aktif: `await supabase.auth.getSession()`
-- Mendengarkan Perubahan Auth (Login/Logout): `supabase.auth.onAuthStateChange((event, session) => { ... })`
-
-## 5. Mengakses Backend API (Sangat Penting!)
-
-Backend Go kita menggunakan **custom middleware** untuk memverifikasi token JWT dari Supabase. Ini berarti **setiap kali Frontend memanggil endpoint Backend yang dilindungi**, Frontend WAJIB melampirkan Token Akses JWT (Access Token) ke dalam *header* `Authorization`.
-
-### Langkah-langkah Memanggil Backend API:
-
-1. Dapatkan token sesi saat ini dari Supabase.
-2. Sisipkan token tersebut ke format `Bearer <token>`.
-3. Kirimkan dalam objek *headers* pada fungsi `fetch` atau `axios`.
-
-### Contoh menggunakan `fetch`:
-
-```javascript
-import { supabase } from '../lib/supabase'
-
-const fetchUserProfile = async () => {
-  // 1. Ambil sesi saat ini dari Supabase
-  const { data: { session } } = await supabase.auth.getSession()
-  
-  // Pastikan user sudah login
-  if (!session) {
-    console.error('User belum login!')
-    return
-  }
-
-  const token = session.access_token
-
-  // 2. Lakukan request ke backend Go (misal: GET /api/users/me)
-  try {
-    const response = await fetch('http://localhost:8080/api/users/me', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        // PENTING: Masukkan token JWT ke header Authorization
-        'Authorization': `Bearer ${token}` 
-      }
-    })
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        console.error('Token tidak valid atau sudah kadaluarsa (Unauthorized)')
-        // Opsional: Lakukan proses refresh token atau paksa user re-login
-      }
-      throw new Error(`Error HTTP: ${response.status}`)
-    }
-
-    const result = await response.json()
-    console.log('Data profil:', result)
-    return result
-
-  } catch (error) {
-    console.error('Gagal mengambil data profil:', error)
-  }
-}
-```
-
-## 6. Tips Tambahan untuk Frontend
-
-- **Interceptor Axios**: Jika Anda menggunakan Axios, sangat disarankan untuk membuat *interceptor* yang akan secara otomatis menyisipkan *header* `Authorization` ke setiap request ke backend, sehingga Anda tidak perlu menulisnya berulang-ulang di setiap pemanggilan fungsi API.
-- **Auto Refresh Token**: Supabase JS Client secara otomatis menangani *refresh token* di belakang layar. Namun, pastikan Anda selalu mengambil token menggunakan `supabase.auth.getSession()` sebelum memanggil backend untuk memastikan token yang dikirim adalah yang terbaru (tidak kadaluarsa).
-- **Backend URL**: Gunakan *environment variable* untuk Base URL Backend (contoh: `VITE_BACKEND_URL=http://localhost:8080`), jangan di-*hardcode*.
+* login pasien;
+* registrasi pasien;
+* tiket permanen;
+* polling status tiket pasien;
+* live tracking posisi antrean;
+* estimasi waktu tunggu;
+* WebSocket;
+* notifikasi real-time;
+* dashboard analitik global;
+* manajemen akun admin dari frontend;
+* deployment production.
