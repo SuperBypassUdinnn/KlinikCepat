@@ -52,9 +52,6 @@ func (m *mockTriageRepo) GetAntreanByKlinikID(ctx context.Context, kID string, s
 func (m *mockTriageRepo) UpdateStatusAntrean(ctx context.Context, id string, status string) error {
 	return nil
 }
-func (m *mockTriageRepo) GetUserRole(ctx context.Context, userID string) (string, error) {
-	return "", nil
-}
 
 func TestTriageService_ProcessTriage(t *testing.T) {
 	// Mock katalog gejala

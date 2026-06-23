@@ -1,9 +1,12 @@
 package handlers
 
 import (
-	"KlinikCepat/internal/models"
 	"encoding/json"
 	"net/http"
+	"strings"
+
+	"KlinikCepat/internal/middleware"
+	"KlinikCepat/internal/models"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -29,15 +32,90 @@ func (h *Handler) ProcessTriage(w http.ResponseWriter, r *http.Request) {
 
 // GetAntreanByKlinikID handles GET /api/v1/admin/antrean
 func (h *Handler) GetAntreanByKlinikID(w http.ResponseWriter, r *http.Request) {
-	klinikID := r.URL.Query().Get("klinik_id")
-	if klinikID == "" {
-		http.Error(w, `{"error": "Parameter 'klinik_id' wajib diisi"}`, http.StatusBadRequest)
+	claims, ok := middleware.GetClaimsFromContext(
+		r.Context(),
+	)
+	if !ok {
+		http.Error(
+			w,
+			`{"error": "Unauthorized: Informasi user tidak ditemukan"}`,
+			http.StatusUnauthorized,
+		)
 		return
 	}
 
-	status := r.URL.Query().Get("status")
+	requestedKlinikID := strings.TrimSpace(
+		r.URL.Query().Get("klinik_id"),
+	)
+
+	var klinikID string
+
+	switch claims.Role {
+	case "klinik_admin":
+		if claims.KlinikID == nil ||
+			strings.TrimSpace(*claims.KlinikID) == "" {
+			http.Error(
+				w,
+				`{"error": "Forbidden: Akun admin belum terhubung ke klinik"}`,
+				http.StatusForbidden,
+			)
+			return
+		}
+
+		klinikID = strings.TrimSpace(
+			*claims.KlinikID,
+		)
+
+		// Jika frontend masih mengirim ID klinik berbeda,
+		// request langsung ditolak.
+		if requestedKlinikID != "" &&
+			requestedKlinikID != klinikID {
+			http.Error(
+				w,
+				`{"error": "Forbidden: Anda tidak boleh mengakses klinik lain"}`,
+				http.StatusForbidden,
+			)
+			return
+		}
+
+	case "superadmin":
+		if requestedKlinikID == "" {
+			http.Error(
+				w,
+				`{"error": "Parameter 'klinik_id' wajib diisi untuk superadmin"}`,
+				http.StatusBadRequest,
+			)
+			return
+		}
+
+		klinikID = requestedKlinikID
+
+	default:
+		http.Error(
+			w,
+			`{"error": "Forbidden: Role tidak diizinkan"}`,
+			http.StatusForbidden,
+		)
+		return
+	}
+
+	status := strings.TrimSpace(
+		r.URL.Query().Get("status"),
+	)
+
 	if status == "" {
-		status = "Menunggu" // Default status
+		status = "Menunggu"
+	}
+
+	if status != "Menunggu" &&
+		status != "Selesai" &&
+		status != "Dilewati" {
+		http.Error(
+			w,
+			`{"error": "Status harus berupa 'Menunggu', 'Selesai', atau 'Dilewati'"}`,
+			http.StatusBadRequest,
+		)
+		return
 	}
 
 	antreans, err := h.Repo.GetAntreanByKlinikID(r.Context(), klinikID, status)

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"KlinikCepat/internal/middleware"
 	"KlinikCepat/internal/models"
 	"KlinikCepat/internal/services"
 	"bytes"
@@ -12,6 +13,26 @@ import (
 
 	"github.com/go-chi/chi/v5"
 )
+
+func withTestClaims(
+	req *http.Request,
+	role string,
+	klinikID *string,
+) *http.Request {
+	claims := &middleware.JWTClaims{
+		Sub:      "test-user-id",
+		Email:    "test@example.com",
+		Role:     role,
+		KlinikID: klinikID,
+	}
+
+	ctx := middleware.WithClaims(
+		req.Context(),
+		claims,
+	)
+
+	return req.WithContext(ctx)
+}
 
 func TestHandler_AntreanAndTriage(t *testing.T) {
 	t.Run("Process Triage - Success (Merah)", func(t *testing.T) {
@@ -63,7 +84,19 @@ func TestHandler_AntreanAndTriage(t *testing.T) {
 			StatusAntrean: "Menunggu",
 		}
 
-		req := httptest.NewRequest("GET", "/api/v1/admin/antrean?klinik_id=k-1&status=Menunggu", nil)
+		req := httptest.NewRequest(
+			http.MethodGet,
+			"/api/v1/admin/antrean?status=Menunggu",
+			nil,
+		)
+
+		klinikID := "k-1"
+
+		req = withTestClaims(
+			req,
+			"klinik_admin",
+			&klinikID,
+		)
 		rr := httptest.NewRecorder()
 
 		h.GetAntreanByKlinikID(rr, req)
@@ -79,19 +112,105 @@ func TestHandler_AntreanAndTriage(t *testing.T) {
 		}
 	})
 
-	t.Run("Get Antrean - Missing Klinik ID", func(t *testing.T) {
-		repo := NewMockRepository()
-		h := NewHandler(repo, nil)
+	t.Run(
+		"Superadmin wajib menentukan klinik ID",
+		func(t *testing.T) {
+			repo := NewMockRepository()
+			h := NewHandler(repo, nil)
 
-		req := httptest.NewRequest("GET", "/api/v1/admin/antrean", nil)
-		rr := httptest.NewRecorder()
+			req := httptest.NewRequest(
+				http.MethodGet,
+				"/api/v1/admin/antrean",
+				nil,
+			)
 
-		h.GetAntreanByKlinikID(rr, req)
+			req = withTestClaims(
+				req,
+				"superadmin",
+				nil,
+			)
 
-		if rr.Code != http.StatusBadRequest {
-			t.Errorf("StatusCode = %v, want %v", rr.Code, http.StatusBadRequest)
-		}
-	})
+			rr := httptest.NewRecorder()
+
+			h.GetAntreanByKlinikID(rr, req)
+
+			if rr.Code != http.StatusBadRequest {
+				t.Errorf(
+					"StatusCode = %v, want %v",
+					rr.Code,
+					http.StatusBadRequest,
+				)
+			}
+		},
+	)
+
+	t.Run(
+		"Klinik admin ditolak mengakses klinik lain",
+		func(t *testing.T) {
+			repo := NewMockRepository()
+			h := NewHandler(repo, nil)
+
+			klinikID := "k-1"
+
+			req := httptest.NewRequest(
+				http.MethodGet,
+				"/api/v1/admin/antrean?klinik_id=k-2",
+				nil,
+			)
+
+			req = withTestClaims(
+				req,
+				"klinik_admin",
+				&klinikID,
+			)
+
+			rr := httptest.NewRecorder()
+
+			h.GetAntreanByKlinikID(rr, req)
+
+			if rr.Code != http.StatusForbidden {
+				t.Errorf(
+					"StatusCode = %v, want %v",
+					rr.Code,
+					http.StatusForbidden,
+				)
+			}
+		},
+	)
+
+	t.Run(
+		"Get antrean menolak status tidak valid",
+		func(t *testing.T) {
+			repo := NewMockRepository()
+			h := NewHandler(repo, nil)
+
+			klinikID := "k-1"
+
+			req := httptest.NewRequest(
+				http.MethodGet,
+				"/api/v1/admin/antrean?status=StatusNgawur",
+				nil,
+			)
+
+			req = withTestClaims(
+				req,
+				"klinik_admin",
+				&klinikID,
+			)
+
+			rr := httptest.NewRecorder()
+
+			h.GetAntreanByKlinikID(rr, req)
+
+			if rr.Code != http.StatusBadRequest {
+				t.Errorf(
+					"StatusCode = %v, want %v",
+					rr.Code,
+					http.StatusBadRequest,
+				)
+			}
+		},
+	)
 
 	t.Run("Update Status Antrean - Success", func(t *testing.T) {
 		repo := NewMockRepository()
