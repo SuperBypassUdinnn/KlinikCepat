@@ -1,8 +1,8 @@
 -- Tabel untuk memetakan user Supabase ke role tertentu di aplikasi kita
-CREATE TABLE user_roles (
+CREATE TABLE IF NOT EXISTS user_roles (
     user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     role VARCHAR(50) NOT NULL DEFAULT 'klinik_admin',
-    klinik_id UUID REFERENCES klinik(id) ON DELETE SET NULL,
+    klinik_id UUID REFERENCES klinik(id) ON DELETE RESTRICT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
