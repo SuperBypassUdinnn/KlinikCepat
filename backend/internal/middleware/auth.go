@@ -50,7 +50,10 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Menyimpan klaim user ke dalam context request
-		ctx := context.WithValue(r.Context(), UserContextKey, claims)
+		ctx := WithClaims(
+			r.Context(),
+			claims,
+		)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -99,4 +102,16 @@ func VerifySupabaseJWT(token string) (*JWTClaims, error) {
 	}
 
 	return &claims, nil
+}
+
+// WithClaims menyimpan JWT claims ke request context.
+func WithClaims(
+	ctx context.Context,
+	claims *JWTClaims,
+) context.Context {
+	return context.WithValue(
+		ctx,
+		UserContextKey,
+		claims,
+	)
 }

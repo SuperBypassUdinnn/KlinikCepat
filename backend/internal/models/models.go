@@ -41,6 +41,14 @@ type UserAccess struct {
 	KlinikID *string `json:"klinik_id"`
 }
 
+// AuthMeResponse adalah respons endpoint GET /api/v1/auth/me.
+type AuthMeResponse struct {
+	ID       string  `json:"id"`
+	Email    string  `json:"email"`
+	Role     string  `json:"role"`
+	KlinikID *string `json:"klinik_id"`
+}
+
 // Request & Response Payloads
 
 // GejalaInput adalah sub-struct untuk menampung input skala dari pasien
