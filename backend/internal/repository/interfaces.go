@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"context"
 	"KlinikCepat/internal/models"
+	"context"
 )
 
 // KlinikRepository mendefinisikan kontrak akses data untuk Klinik
@@ -34,6 +34,7 @@ type AntreanRepository interface {
 // UserRepository mendefinisikan kontrak akses data untuk User Roles
 type UserRepository interface {
 	GetUserRole(ctx context.Context, userID string) (string, error)
+	GetUserAccess(ctx context.Context, userID string) (*models.UserAccess, error)
 }
 
 // RepositoryInterface menggabungkan seluruh fungsionalitas repository database

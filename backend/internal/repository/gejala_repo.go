@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"context"
 	"KlinikCepat/internal/models"
+	"context"
 )
 
 // CreateGejala menambahkan gejala baru ke database

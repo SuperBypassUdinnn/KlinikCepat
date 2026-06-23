@@ -20,10 +20,11 @@ const UserContextKey contextKey = "user"
 
 // JWTClaims menampung klaim esensial dari Supabase JWT Token
 type JWTClaims struct {
-	Sub   string `json:"sub"` // UUID Pengguna di Supabase Auth
-	Email string `json:"email"`
-	Role  string `json:"role"`
-	Exp   int64  `json:"exp"`
+	Sub      string  `json:"sub"` // UUID Pengguna di Supabase Auth
+	Email    string  `json:"email"`
+	Role     string  `json:"role"`
+	Exp      int64   `json:"exp"`
+	KlinikID *string `json:"-"`
 }
 
 // AuthMiddleware mengamankan rute admin dengan memverifikasi JWT dari Supabase Auth

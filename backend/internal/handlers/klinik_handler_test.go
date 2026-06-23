@@ -1,13 +1,13 @@
 package handlers
 
 import (
+	"KlinikCepat/internal/models"
 	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"KlinikCepat/internal/models"
 
 	"github.com/go-chi/chi/v5"
 )

@@ -1,10 +1,10 @@
 package services
 
 import (
-	"context"
-	"errors"
 	"KlinikCepat/internal/models"
 	"KlinikCepat/internal/repository"
+	"context"
+	"errors"
 )
 
 // TriageService menangani logika bisnis kalkulasi triage
