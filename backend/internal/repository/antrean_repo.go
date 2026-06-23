@@ -91,12 +91,45 @@ func (r *RepositoryWrapper) GetAntreanByKlinikID(ctx context.Context, klinikID s
 }
 
 // UpdateStatusAntrean memperbarui status antrean (Menunggu / Selesai / Dilewati)
-func (r *RepositoryWrapper) UpdateStatusAntrean(ctx context.Context, id string, status string) error {
-	query := `
-		UPDATE antrean
-		SET status_antrean = $1
-		WHERE id = $2
-	`
-	_, err := r.Pool.Exec(ctx, query, status, id)
-	return err
+func (r *RepositoryWrapper) UpdateStatusAntrean(
+	ctx context.Context,
+	id string,
+	status string,
+	klinikID *string,
+) (bool, error) {
+	if klinikID == nil {
+		commandTag, err := r.Pool.Exec(
+			ctx,
+			`
+				UPDATE antrean
+				SET status_antrean = $1
+				WHERE id = $2
+			`,
+			status,
+			id,
+		)
+		if err != nil {
+			return false, err
+		}
+
+		return commandTag.RowsAffected() > 0, nil
+	}
+
+	commandTag, err := r.Pool.Exec(
+		ctx,
+		`
+			UPDATE antrean
+			SET status_antrean = $1
+			WHERE id = $2
+			  AND klinik_id = $3
+		`,
+		status,
+		id,
+		*klinikID,
+	)
+	if err != nil {
+		return false, err
+	}
+
+	return commandTag.RowsAffected() > 0, nil
 }

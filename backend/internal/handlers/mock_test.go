@@ -140,13 +140,25 @@ func (m *MockRepository) GetAntreanByKlinikID(ctx context.Context, klinikID stri
 }
 
 // UpdateStatusAntrean memperbarui status antrean
-func (m *MockRepository) UpdateStatusAntrean(ctx context.Context, id string, status string) error {
-	a, exists := m.Antreans[id]
+func (m *MockRepository) UpdateStatusAntrean(
+	ctx context.Context,
+	id string,
+	status string,
+	klinikID *string,
+) (bool, error) {
+	antrean, exists := m.Antreans[id]
 	if !exists {
-		return errors.New("antrean tidak ditemukan")
+		return false, nil
 	}
-	a.StatusAntrean = status
-	return nil
+
+	if klinikID != nil &&
+		antrean.KlinikID != *klinikID {
+		return false, nil
+	}
+
+	antrean.StatusAntrean = status
+
+	return true, nil
 }
 
 // GetUserAccess mensimulasikan pengambilan role
