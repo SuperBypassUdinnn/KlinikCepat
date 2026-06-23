@@ -1,22 +1,37 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { HiOutlineMenu, HiOutlineX } from 'react-icons/hi';
-import { FiActivity } from 'react-icons/fi';
-import './Navbar.css';
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { HiOutlineMenu, HiOutlineX } from "react-icons/hi";
+import { FiActivity } from "react-icons/fi";
+import "./Navbar.css";
+
+function getDashboardPath(role) {
+  switch (role) {
+    case "superadmin":
+      return "/superadmin/klinik";
+
+    case "klinik_admin":
+      return "/admin/dashboard";
+
+    default:
+      return "/";
+  }
+}
 
 export default function Navbar() {
-  const { user, signOut } = useAuth();
+  const { user, role, loading: authLoading, signOut } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+  const [logoutError, setLogoutError] = useState(null);
 
   // Detect scroll for navbar shadow
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Close mobile menu on route change
@@ -27,106 +42,145 @@ export default function Navbar() {
   const isActive = (path) => location.pathname === path;
 
   const handleLogout = async () => {
-    await signOut();
-    navigate('/');
+    setLogoutLoading(true);
+    setLogoutError(null);
+
+    try {
+      await signOut();
+      navigate("/", { replace: true });
+    } catch (error) {
+      setLogoutError(error.message || "Gagal logout.");
+    } finally {
+      setLogoutLoading(false);
+    }
   };
 
-  // Determine which nav to show based on current route
-  const isAdminRoute = location.pathname.startsWith('/admin');
-  const isSuperAdminRoute = location.pathname.startsWith('/superadmin');
+  const dashboardPath = getDashboardPath(role);
+
+  const brandPath = user && role ? dashboardPath : "/";
 
   return (
-    <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-      <div className="navbar-inner">
-        <Link to="/" className="navbar-brand">
-          <div className="navbar-logo-icon">
-            <FiActivity />
-          </div>
-          <span className="navbar-brand-text">
-            Klinik<span>Cepat</span>
-          </span>
-        </Link>
-
-        <button
-          className="navbar-toggle"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="Toggle navigation"
-          id="navbar-toggle-btn"
-        >
-          {isOpen ? <HiOutlineX /> : <HiOutlineMenu />}
-        </button>
-
-        <ul className={`navbar-nav ${isOpen ? 'open' : ''}`}>
-          {!isAdminRoute && !isSuperAdminRoute && (
-            <>
+    <>
+      <nav className={`navbar ${scrolled ? "scrolled" : ""}`}>
+        <div className="navbar-inner">
+          <Link to={brandPath} className="navbar-brand">
+            <div className="navbar-logo-icon">
+              <FiActivity />
+            </div>
+            <span className="navbar-brand-text">
+              Klinik<span>Cepat</span>
+            </span>
+          </Link>
+          <button
+            className="navbar-toggle"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle navigation"
+            id="navbar-toggle-btn"
+          >
+            {isOpen ? <HiOutlineX /> : <HiOutlineMenu />}
+          </button>
+          <ul className={`navbar-nav ${isOpen ? "open" : ""}`}>
+            {!user && !authLoading && (
               <li>
                 <Link
                   to="/"
-                  className={`navbar-nav-link ${isActive('/') ? 'active' : ''}`}
+                  className={`navbar-nav-link ${isActive("/") ? "active" : ""}`}
                   id="nav-link-home"
                 >
                   Cari Klinik
                 </Link>
               </li>
-            </>
-          )}
-
-          {isAdminRoute && (
-            <>
-              <li>
-                <Link
-                  to="/admin/dashboard"
-                  className={`navbar-nav-link ${isActive('/admin/dashboard') ? 'active' : ''}`}
-                  id="nav-link-admin-dashboard"
-                >
-                  Dashboard
-                </Link>
-              </li>
-            </>
-          )}
-
-          {isSuperAdminRoute && (
-            <>
-              <li>
-                <Link
-                  to="/superadmin/klinik"
-                  className={`navbar-nav-link ${isActive('/superadmin/klinik') ? 'active' : ''}`}
-                  id="nav-link-sa-klinik"
-                >
-                  Kelola Klinik
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/superadmin/gejala"
-                  className={`navbar-nav-link ${isActive('/superadmin/gejala') ? 'active' : ''}`}
-                  id="nav-link-sa-gejala"
-                >
-                  Kelola Gejala
-                </Link>
-              </li>
-            </>
-          )}
-
-          <li>
-            {user ? (
-              <button
-                className="navbar-auth-btn logout"
-                onClick={handleLogout}
-                id="navbar-logout-btn"
-              >
-                Logout
-              </button>
-            ) : (
-              <Link to="/admin/login">
-                <button className="navbar-auth-btn login" id="navbar-login-btn">
-                  Login Admin
-                </button>
-              </Link>
             )}
-          </li>
-        </ul>
-      </div>
-    </nav>
+
+            {user && role === "klinik_admin" && (
+              <>
+                <li>
+                  <Link
+                    to="/admin/dashboard"
+                    className={`navbar-nav-link ${
+                      isActive("/admin/dashboard") ? "active" : ""
+                    }`}
+                    id="nav-link-admin-dashboard"
+                  >
+                    Dashboard
+                  </Link>
+                </li>
+
+                <li>
+                  <Link
+                    to="/"
+                    className={`navbar-nav-link ${isActive("/") ? "active" : ""}`}
+                  >
+                    Halaman Pasien
+                  </Link>
+                </li>
+              </>
+            )}
+
+            {user && role === "superadmin" && (
+              <>
+                <li>
+                  <Link
+                    to="/superadmin/klinik"
+                    className={`navbar-nav-link ${
+                      isActive("/superadmin/klinik") ? "active" : ""
+                    }`}
+                    id="nav-link-sa-klinik"
+                  >
+                    Kelola Klinik
+                  </Link>
+                </li>
+
+                <li>
+                  <Link
+                    to="/superadmin/gejala"
+                    className={`navbar-nav-link ${
+                      isActive("/superadmin/gejala") ? "active" : ""
+                    }`}
+                    id="nav-link-sa-gejala"
+                  >
+                    Kelola Gejala
+                  </Link>
+                </li>
+
+                <li>
+                  <Link
+                    to="/"
+                    className={`navbar-nav-link ${isActive("/") ? "active" : ""}`}
+                  >
+                    Halaman Pasien
+                  </Link>
+                </li>
+              </>
+            )}
+
+            <li>
+              {authLoading ? (
+                <span className="navbar-auth-loading">Memuat...</span>
+              ) : user ? (
+                <button
+                  type="button"
+                  className="navbar-auth-btn logout"
+                  onClick={handleLogout}
+                  disabled={logoutLoading}
+                  id="navbar-logout-btn"
+                >
+                  {logoutLoading ? "Keluar..." : "Logout"}
+                </button>
+              ) : (
+                <Link
+                  to="/admin/login"
+                  className="navbar-auth-btn login"
+                  id="navbar-login-btn"
+                >
+                  Login Admin
+                </Link>
+              )}
+            </li>
+          </ul>{" "}
+        </div>
+      </nav>
+      {logoutError && <div className="navbar-error">{logoutError}</div>}
+    </>
   );
 }
