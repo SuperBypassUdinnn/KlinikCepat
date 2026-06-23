@@ -157,9 +157,74 @@ func (h *Handler) UpdateStatusAntrean(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.Repo.UpdateStatusAntrean(r.Context(), id, payload.Status)
+	claims, ok := middleware.GetClaimsFromContext(
+		r.Context(),
+	)
+	if !ok {
+		http.Error(
+			w,
+			`{"error": "Unauthorized: Informasi user tidak ditemukan"}`,
+			http.StatusUnauthorized,
+		)
+		return
+	}
+
+	var scopedKlinikID *string
+
+	switch claims.Role {
+	case "klinik_admin":
+		if claims.KlinikID == nil ||
+			strings.TrimSpace(*claims.KlinikID) == "" {
+			http.Error(
+				w,
+				`{"error": "Forbidden: Akun admin belum terhubung ke klinik"}`,
+				http.StatusForbidden,
+			)
+			return
+		}
+
+		klinikID := strings.TrimSpace(
+			*claims.KlinikID,
+		)
+
+		scopedKlinikID = &klinikID
+
+	case "superadmin":
+		// nil berarti superadmin tidak dibatasi klinik tertentu.
+		scopedKlinikID = nil
+
+	default:
+		http.Error(
+			w,
+			`{"error": "Forbidden: Role tidak diizinkan"}`,
+			http.StatusForbidden,
+		)
+		return
+	}
+
+	updated, err := h.Repo.UpdateStatusAntrean(
+		r.Context(),
+		id,
+		payload.Status,
+		scopedKlinikID,
+	)
+
 	if err != nil {
-		http.Error(w, `{"error": "Gagal memperbarui status antrean: `+err.Error()+`"}`, http.StatusInternalServerError)
+		http.Error(
+			w,
+			`{"error": "Gagal memperbarui status antrean: `+
+				err.Error()+`"}`,
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	if !updated {
+		http.Error(
+			w,
+			`{"error": "Antrean tidak ditemukan"}`,
+			http.StatusNotFound,
+		)
 		return
 	}
 

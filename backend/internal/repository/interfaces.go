@@ -28,7 +28,12 @@ type AntreanRepository interface {
 	CreateAntrean(ctx context.Context, a *models.Antrean) error
 	GetAntreanByID(ctx context.Context, id string) (*models.Antrean, error)
 	GetAntreanByKlinikID(ctx context.Context, klinikID string, status string) ([]models.Antrean, error)
-	UpdateStatusAntrean(ctx context.Context, id string, status string) error
+	UpdateStatusAntrean(
+		ctx context.Context,
+		id string,
+		status string,
+		klinikID *string,
+	) (bool, error)
 }
 
 // UserRepository mendefinisikan kontrak akses data untuk User Roles

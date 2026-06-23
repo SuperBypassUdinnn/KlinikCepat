@@ -216,36 +216,63 @@ func TestHandler_AntreanAndTriage(t *testing.T) {
 		repo := NewMockRepository()
 		h := NewHandler(repo, nil)
 
-		repo.Antreans["a-2"] = &models.Antrean{
-			ID:            "a-2",
+		repo.Antreans["a-1"] = &models.Antrean{
+			ID:            "a-1",
 			KlinikID:      "k-1",
-			NamaPasien:    "Pasien B",
+			NamaPasien:    "Budi",
+			TotalSkor:     10,
+			StatusTriage:  "Kuning",
 			StatusAntrean: "Menunggu",
 		}
 
-		payload := struct {
-			Status string `json:"status"`
-		}{
-			Status: "Selesai",
+		payload := map[string]string{
+			"status": "Selesai",
 		}
 
 		body, _ := json.Marshal(payload)
-		req := httptest.NewRequest("PUT", "/api/v1/admin/antrean/a-2/status", bytes.NewBuffer(body))
-		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("id", "a-2")
-		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+
+		req := httptest.NewRequest(
+			http.MethodPut,
+			"/api/v1/admin/antrean/a-1/status",
+			bytes.NewBuffer(body),
+		)
+
+		routeContext := chi.NewRouteContext()
+		routeContext.URLParams.Add("id", "a-1")
+
+		req = req.WithContext(
+			context.WithValue(
+				req.Context(),
+				chi.RouteCtxKey,
+				routeContext,
+			),
+		)
+
+		klinikID := "k-1"
+
+		req = withTestClaims(
+			req,
+			"klinik_admin",
+			&klinikID,
+		)
 
 		rr := httptest.NewRecorder()
 
 		h.UpdateStatusAntrean(rr, req)
 
 		if rr.Code != http.StatusOK {
-			t.Errorf("StatusCode = %v, want %v", rr.Code, http.StatusOK)
+			t.Errorf(
+				"StatusCode = %v, want %v",
+				rr.Code,
+				http.StatusOK,
+			)
 		}
 
-		// Verifikasi status berubah di repo
-		if repo.Antreans["a-2"].StatusAntrean != "Selesai" {
-			t.Errorf("StatusAntrean = %v, want 'Selesai'", repo.Antreans["a-2"].StatusAntrean)
+		if repo.Antreans["a-1"].StatusAntrean != "Selesai" {
+			t.Errorf(
+				"StatusAntrean = %v, want 'Selesai'",
+				repo.Antreans["a-1"].StatusAntrean,
+			)
 		}
 	})
 
@@ -280,4 +307,73 @@ func TestHandler_AntreanAndTriage(t *testing.T) {
 			t.Errorf("StatusCode = %v, want %v", rr.Code, http.StatusBadRequest)
 		}
 	})
+
+	t.Run(
+		"Klinik admin tidak bisa update antrean klinik lain",
+		func(t *testing.T) {
+			repo := NewMockRepository()
+			h := NewHandler(repo, nil)
+
+			repo.Antreans["a-klinik-lain"] = &models.Antrean{
+				ID:            "a-klinik-lain",
+				KlinikID:      "k-2",
+				NamaPasien:    "Pasien Klinik B",
+				StatusAntrean: "Menunggu",
+			}
+
+			payload := map[string]string{
+				"status": "Selesai",
+			}
+
+			body, _ := json.Marshal(payload)
+
+			req := httptest.NewRequest(
+				http.MethodPut,
+				"/api/v1/admin/antrean/a-klinik-lain/status",
+				bytes.NewBuffer(body),
+			)
+
+			routeContext := chi.NewRouteContext()
+			routeContext.URLParams.Add(
+				"id",
+				"a-klinik-lain",
+			)
+
+			req = req.WithContext(
+				context.WithValue(
+					req.Context(),
+					chi.RouteCtxKey,
+					routeContext,
+				),
+			)
+
+			// Admin terikat ke Klinik A.
+			klinikID := "k-1"
+
+			req = withTestClaims(
+				req,
+				"klinik_admin",
+				&klinikID,
+			)
+
+			rr := httptest.NewRecorder()
+
+			h.UpdateStatusAntrean(rr, req)
+
+			if rr.Code != http.StatusNotFound {
+				t.Errorf(
+					"StatusCode = %v, want %v",
+					rr.Code,
+					http.StatusNotFound,
+				)
+			}
+
+			if repo.Antreans["a-klinik-lain"].
+				StatusAntrean != "Menunggu" {
+				t.Error(
+					"Status antrean klinik lain tidak boleh berubah",
+				)
+			}
+		},
+	)
 }

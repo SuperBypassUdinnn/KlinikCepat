@@ -49,8 +49,13 @@ func (m *mockTriageRepo) GetAntreanByID(ctx context.Context, id string) (*models
 func (m *mockTriageRepo) GetAntreanByKlinikID(ctx context.Context, kID string, status string) ([]models.Antrean, error) {
 	return nil, nil
 }
-func (m *mockTriageRepo) UpdateStatusAntrean(ctx context.Context, id string, status string) error {
-	return nil
+func (m *mockTriageRepo) UpdateStatusAntrean(
+	ctx context.Context,
+	id string,
+	status string,
+	klinikID *string,
+) (bool, error) {
+	return false, nil
 }
 
 func TestTriageService_ProcessTriage(t *testing.T) {
