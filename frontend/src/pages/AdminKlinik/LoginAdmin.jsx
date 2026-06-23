@@ -1,23 +1,41 @@
-import { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import Card from '../../components/Card';
-import Button from '../../components/Button';
-import { FiShield } from 'react-icons/fi';
-import './LoginAdmin.css';
+import { useState } from "react";
+import { useNavigate, Navigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import Card from "../../components/Card";
+import Button from "../../components/Button";
+import { FiShield } from "react-icons/fi";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import "./LoginAdmin.css";
+
+function getDashboardRoute(role) {
+  switch (role) {
+    case "superadmin":
+      return "/superadmin/klinik";
+
+    case "klinik_admin":
+      return "/admin/dashboard";
+
+    default:
+      return "/admin/login";
+  }
+}
 
 export default function LoginAdmin() {
-  const { signIn, isAuthenticated } = useAuth();
+  const { signIn, user, role, loading: authLoading, authError } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // Redirect jika sudah login
-  if (isAuthenticated) {
-    return <Navigate to="/admin/dashboard" replace />;
+  if (authLoading) {
+    return <LoadingSpinner fullPage text="Memverifikasi sesi..." />;
+  }
+
+  if (user && role) {
+    return <Navigate to={getDashboardRoute(role)} replace />;
   }
 
   const handleSubmit = async (e) => {
@@ -26,10 +44,11 @@ export default function LoginAdmin() {
     setError(null);
 
     try {
-      await signIn(email, password);
-      navigate('/admin/dashboard');
+      const currentUser = await signIn(email, password);
+
+      navigate(getDashboardRoute(currentUser.role), { replace: true });
     } catch (err) {
-      setError(err.message || 'Login gagal. Periksa email dan password Anda.');
+      setError(err.message || "Login gagal. Periksa email dan password Anda.");
     } finally {
       setLoading(false);
     }
@@ -42,14 +61,17 @@ export default function LoginAdmin() {
           <div className="login-icon">
             <FiShield />
           </div>
-          <h2 className="login-title">Login Admin Klinik</h2>
+          <h2 className="login-title">Login Admin</h2>
           <p className="login-subtitle">
             Masuk untuk mengelola antrean pasien di faskes Anda
           </p>
 
-          {error && (
-            <div className="alert alert-danger animate-fade-in" style={{ marginBottom: '1rem' }}>
-              {error}
+          {(error || authError) && (
+            <div
+              className="alert alert-danger animate-fade-in"
+              style={{ marginBottom: "1rem" }}
+            >
+              {error || authError}
             </div>
           )}
 
@@ -91,7 +113,7 @@ export default function LoginAdmin() {
               block
               size="lg"
               loading={loading}
-              style={{ marginTop: 'var(--space-md)' }}
+              style={{ marginTop: "var(--space-md)" }}
             >
               Masuk
             </Button>
@@ -99,11 +121,7 @@ export default function LoginAdmin() {
 
           <div className="login-divider">atau</div>
 
-          <Button
-            variant="ghost"
-            block
-            onClick={() => navigate('/')}
-          >
+          <Button variant="ghost" block onClick={() => navigate("/")}>
             Kembali ke Halaman Pasien
           </Button>
         </div>
