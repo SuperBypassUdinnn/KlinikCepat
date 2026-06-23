@@ -115,3 +115,15 @@ func WithClaims(
 		claims,
 	)
 }
+
+// GetClaimsFromContext mengambil JWT claims
+// yang sudah disimpan dalam request context.
+func GetClaimsFromContext(
+	ctx context.Context,
+) (*JWTClaims, bool) {
+	claims, ok := ctx.Value(
+		UserContextKey,
+	).(*JWTClaims)
+
+	return claims, ok && claims != nil
+}

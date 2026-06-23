@@ -149,19 +149,6 @@ func (m *MockRepository) UpdateStatusAntrean(ctx context.Context, id string, sta
 	return nil
 }
 
-// GetUserRole mensimulasikan pengambilan role dari database
-func (m *MockRepository) GetUserRole(ctx context.Context, userID string) (string, error) {
-	// Untuk keperluan tes, kita anggap user "superadmin-id" adalah superadmin
-	switch userID {
-	case "superadmin-id":
-		return "superadmin", nil
-	case "klinik-admin-id":
-		return "klinik_admin", nil
-	default:
-		return "", nil
-	}
-}
-
 // GetUserAccess mensimulasikan pengambilan role
 // dan klinik user dari database.
 func (m *MockRepository) GetUserAccess(
