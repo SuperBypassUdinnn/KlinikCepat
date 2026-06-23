@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
@@ -70,7 +69,10 @@ func RequireRole(repo repository.RepositoryInterface, allowedRoles ...string) fu
 			// Jika role sesuai, simpan role yang didapat dari DB ke context untuk digunakan lebih lanjut jika diperlukan
 			claims.Role = access.Role
 			claims.KlinikID = access.KlinikID
-			ctx := context.WithValue(r.Context(), UserContextKey, claims)
+			ctx := WithClaims(
+				r.Context(),
+				claims,
+			)
 
 			// 4. Lanjutkan ke handler
 			next.ServeHTTP(w, r.WithContext(ctx))

@@ -70,8 +70,20 @@ func main() {
 		r.Get("/klinik/{id}", h.GetKlinikByID)
 		r.Get("/gejala", h.GetAllGejala)
 		r.Get("/gejala/{id}", h.GetGejalaByID)
-		
+
 		r.Post("/triage", h.ProcessTriage)
+
+		// Profil user terautentikasi.
+		r.Group(func(r chi.Router) {
+			r.Use(appMiddleware.AuthMiddleware)
+			r.Use(appMiddleware.RequireRole(
+				repo,
+				"superadmin",
+				"klinik_admin",
+			))
+
+			r.Get("/auth/me", h.GetCurrentUser)
+		})
 
 		// --- RUTE TERPROTEKSI ---
 		// 1. Rute Khusus Superadmin (Mengelola Master Data)
