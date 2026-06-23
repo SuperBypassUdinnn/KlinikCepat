@@ -1,41 +1,34 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getClinics, getQueue, updateStatusAntrean } from '../../services/api';
-import Card from '../../components/Card';
-import Badge from '../../components/Badge';
-import Button from '../../components/Button';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import { FiRefreshCw, FiCheck, FiSkipForward, FiAlertCircle, FiAlertTriangle, FiHeart, FiUsers } from 'react-icons/fi';
-import './DashboardAdmin.css';
+import { useState, useEffect, useCallback } from "react";
+import { getQueue, updateStatusAntrean } from "../../services/api";
+import Card from "../../components/Card";
+import Badge from "../../components/Badge";
+import Button from "../../components/Button";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import {
+  FiRefreshCw,
+  FiCheck,
+  FiSkipForward,
+  FiAlertCircle,
+  FiAlertTriangle,
+  FiHeart,
+  FiUsers,
+} from "react-icons/fi";
+import "./DashboardAdmin.css";
 
 export default function DashboardAdmin() {
-  const [clinics, setClinics] = useState([]);
-  const [selectedClinic, setSelectedClinic] = useState('');
   const [queue, setQueue] = useState([]);
-  const [statusFilter, setStatusFilter] = useState('Menunggu');
-  const [loading, setLoading] = useState(true);
-  const [queueLoading, setQueueLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("Menunggu");
+  const [queueLoading, setQueueLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [error, setError] = useState(null);
 
-  // Ambil daftar klinik untuk dropdown
-  useEffect(() => {
-    getClinics()
-      .then((data) => {
-        setClinics(data || []);
-        if (data?.length > 0) {
-          setSelectedClinic(data[0].id);
-        }
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
-
   // Fetch queue data
   const fetchQueue = useCallback(async () => {
-    if (!selectedClinic) return;
     setQueueLoading(true);
+
     try {
-      const data = await getQueue(selectedClinic, statusFilter);
+      const data = await getQueue(statusFilter);
+
       setQueue(data || []);
       setError(null);
     } catch (err) {
@@ -43,19 +36,17 @@ export default function DashboardAdmin() {
     } finally {
       setQueueLoading(false);
     }
-  }, [selectedClinic, statusFilter]);
+  }, [statusFilter]);
 
-  // Fetch saat klinik atau filter berubah
   useEffect(() => {
     fetchQueue();
   }, [fetchQueue]);
 
-  // Auto-refresh setiap 10 detik
   useEffect(() => {
-    if (!selectedClinic) return;
     const interval = setInterval(fetchQueue, 10000);
+
     return () => clearInterval(interval);
-  }, [selectedClinic, statusFilter, fetchQueue]);
+  }, [fetchQueue]);
 
   // Handle aksi status
   const handleUpdateStatus = async (antreanId, newStatus) => {
@@ -74,22 +65,18 @@ export default function DashboardAdmin() {
   // Hitung statistik
   const stats = {
     total: queue.length,
-    merah: queue.filter((q) => q.status_triage === 'Merah').length,
-    kuning: queue.filter((q) => q.status_triage === 'Kuning').length,
-    hijau: queue.filter((q) => q.status_triage === 'Hijau').length,
+    merah: queue.filter((q) => q.status_triage === "Merah").length,
+    kuning: queue.filter((q) => q.status_triage === "Kuning").length,
+    hijau: queue.filter((q) => q.status_triage === "Hijau").length,
   };
 
   const formatTime = (dateStr) => {
     const date = new Date(dateStr);
-    return date.toLocaleTimeString('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit',
+    return date.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
-
-  if (loading) {
-    return <LoadingSpinner text="Memuat dashboard..." />;
-  }
 
   return (
     <div className="container page-wrapper">
@@ -106,31 +93,14 @@ export default function DashboardAdmin() {
             onClick={fetchQueue}
             disabled={queueLoading}
           >
-            <FiRefreshCw size={14} className={queueLoading ? 'spinning' : ''} />
+            <FiRefreshCw size={14} className={queueLoading ? "spinning" : ""} />
             Refresh
           </Button>
         </div>
       </div>
 
-      {/* Klinik Selector */}
-      <div className="klinik-selector">
-        <label htmlFor="klinik-select">Klinik:</label>
-        <select
-          id="klinik-select"
-          className="form-select"
-          value={selectedClinic}
-          onChange={(e) => setSelectedClinic(e.target.value)}
-        >
-          {clinics.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nama_klinik}
-            </option>
-          ))}
-        </select>
-      </div>
-
       {/* Stats Cards */}
-      {statusFilter === 'Menunggu' && (
+      {statusFilter === "Menunggu" && (
         <div className="dashboard-stats">
           <Card className="stat-card">
             <div className="stat-card-header">
@@ -173,7 +143,10 @@ export default function DashboardAdmin() {
 
       {/* Error */}
       {error && (
-        <div className="alert alert-danger animate-fade-in" style={{ marginBottom: '1rem' }}>
+        <div
+          className="alert alert-danger animate-fade-in"
+          style={{ marginBottom: "1rem" }}
+        >
           {error}
         </div>
       )}
@@ -190,10 +163,10 @@ export default function DashboardAdmin() {
 
         {/* Status Filter Tabs */}
         <div className="status-tabs">
-          {['Menunggu', 'Selesai', 'Dilewati'].map((status) => (
+          {["Menunggu", "Selesai", "Dilewati"].map((status) => (
             <button
               key={status}
-              className={`status-tab ${statusFilter === status ? 'active' : ''}`}
+              className={`status-tab ${statusFilter === status ? "active" : ""}`}
               onClick={() => setStatusFilter(status)}
               id={`status-tab-${status.toLowerCase()}`}
             >
@@ -215,7 +188,7 @@ export default function DashboardAdmin() {
                   <th>Status Triage</th>
                   <th>Skor</th>
                   <th>Waktu Daftar</th>
-                  {statusFilter === 'Menunggu' && <th>Aksi</th>}
+                  {statusFilter === "Menunggu" && <th>Aksi</th>}
                 </tr>
               </thead>
               <tbody>
@@ -234,14 +207,16 @@ export default function DashboardAdmin() {
                         {formatTime(item.created_at)}
                       </span>
                     </td>
-                    {statusFilter === 'Menunggu' && (
+                    {statusFilter === "Menunggu" && (
                       <td>
                         <div className="queue-actions">
                           <Button
                             variant="success"
                             size="sm"
                             loading={actionLoading === item.id}
-                            onClick={() => handleUpdateStatus(item.id, 'Selesai')}
+                            onClick={() =>
+                              handleUpdateStatus(item.id, "Selesai")
+                            }
                             id={`btn-selesai-${item.id}`}
                           >
                             <FiCheck size={14} />
@@ -251,7 +226,9 @@ export default function DashboardAdmin() {
                             variant="secondary"
                             size="sm"
                             loading={actionLoading === item.id}
-                            onClick={() => handleUpdateStatus(item.id, 'Dilewati')}
+                            onClick={() =>
+                              handleUpdateStatus(item.id, "Dilewati")
+                            }
                             id={`btn-lewati-${item.id}`}
                           >
                             <FiSkipForward size={14} />
@@ -269,7 +246,7 @@ export default function DashboardAdmin() {
           <div className="queue-empty">
             <div className="queue-empty-icon">📋</div>
             <h3>Tidak Ada Antrean</h3>
-            <p style={{ color: 'var(--color-gray-500)' }}>
+            <p style={{ color: "var(--color-gray-500)" }}>
               Belum ada pasien dengan status "{statusFilter}" saat ini.
             </p>
           </div>
