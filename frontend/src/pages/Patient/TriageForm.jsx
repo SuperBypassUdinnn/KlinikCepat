@@ -105,7 +105,7 @@ export default function TriageForm() {
   if (loading) {
     return <LoadingSpinner text="Memuat kuesioner gejala..." />;
   }
-  
+
   return (
     <div className="container page-wrapper triage-page">
       {/* Header */}
