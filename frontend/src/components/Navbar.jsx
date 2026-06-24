@@ -127,15 +127,6 @@ export default function Navbar() {
                     <strong>{clinicName || "Klinik tidak diketahui"}</strong>
                   </span>
                 </li>
-
-                <li>
-                  <Link
-                    to="/"
-                    className={`navbar-nav-link ${isActive("/") ? "active" : ""}`}
-                  >
-                    Halaman Pasien
-                  </Link>
-                </li>
               </>
             )}
 
@@ -174,15 +165,6 @@ export default function Navbar() {
                     id="nav-link-sa-admin-klinik"
                   >
                     Kelola Admin
-                  </Link>
-                </li>
-
-                <li>
-                  <Link
-                    to="/"
-                    className={`navbar-nav-link ${isActive("/") ? "active" : ""}`}
-                  >
-                    Halaman Pasien
                   </Link>
                 </li>
               </>

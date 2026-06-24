@@ -232,7 +232,7 @@ export default function DashboardAdmin() {
                             id={`btn-lewati-${item.id}`}
                           >
                             <FiSkipForward size={14} />
-                            Lewati
+                            Hapus
                           </Button>
                         </div>
                       </td>
