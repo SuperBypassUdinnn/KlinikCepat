@@ -49,6 +49,30 @@ type AuthMeResponse struct {
 	KlinikID *string `json:"klinik_id"`
 }
 
+// InviteClinicAdminRequest adalah payload untuk
+// mengundang Admin Klinik baru.
+type InviteClinicAdminRequest struct {
+	Email    string `json:"email"`
+	KlinikID string `json:"klinik_id"`
+}
+
+// InvitedAuthUser merepresentasikan user yang
+// berhasil dibuat oleh Supabase Auth.
+type InvitedAuthUser struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+}
+
+// InviteClinicAdminResponse adalah respons setelah
+// undangan dan role Admin Klinik berhasil dibuat.
+type InviteClinicAdminResponse struct {
+	Message  string `json:"message"`
+	UserID   string `json:"user_id"`
+	Email    string `json:"email"`
+	Role     string `json:"role"`
+	KlinikID string `json:"klinik_id"`
+}
+
 // Request & Response Payloads
 
 // GejalaInput adalah sub-struct untuk menampung input skala dari pasien

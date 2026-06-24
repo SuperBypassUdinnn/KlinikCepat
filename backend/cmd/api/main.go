@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"KlinikCepat/internal/handlers"
@@ -31,6 +32,39 @@ func main() {
 		log.Fatal("FATAL ERROR: DATABASE_URL tidak disetel")
 	}
 
+	supabaseURL := strings.TrimSpace(
+		os.Getenv("SUPABASE_URL"),
+	)
+
+	serviceRoleKey := strings.TrimSpace(
+		os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
+	)
+
+	frontendURL := strings.TrimRight(
+		strings.TrimSpace(
+			os.Getenv("FRONTEND_URL"),
+		),
+		"/",
+	)
+
+	if supabaseURL == "" {
+		log.Fatal(
+			"FATAL ERROR: SUPABASE_URL tidak disetel",
+		)
+	}
+
+	if serviceRoleKey == "" {
+		log.Fatal(
+			"FATAL ERROR: SUPABASE_SERVICE_ROLE_KEY tidak disetel",
+		)
+	}
+
+	if frontendURL == "" {
+		log.Fatal(
+			"FATAL ERROR: FRONTEND_URL tidak disetel",
+		)
+	}
+
 	// 2. Inisialisasi Koneksi Connection Pool ke Supabase PostgreSQL
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -49,8 +83,31 @@ func main() {
 
 	// Inisialisasi Dependensi Layer Aplikasi
 	repo := repository.NewRepositoryWrapper(dbPool)
+
 	triageService := services.NewTriageService(repo)
-	h := handlers.NewHandler(repo, triageService)
+
+	supabaseAdminService :=
+		services.NewSupabaseAdminService(
+			supabaseURL,
+			serviceRoleKey,
+			frontendURL+"/admin/set-password",
+			nil,
+		)
+
+	clinicAdminService :=
+		services.NewClinicAdminService(
+			repo,
+			supabaseAdminService,
+		)
+
+	h := handlers.NewHandler(
+		repo,
+		triageService,
+	)
+
+	h.SetClinicAdminService(
+		clinicAdminService,
+	)
 
 	// 3. Inisialisasi Router
 	r := chi.NewRouter()
@@ -100,6 +157,12 @@ func main() {
 			r.Post("/gejala", h.CreateGejala)
 			r.Put("/gejala/{id}", h.UpdateGejala)
 			r.Delete("/gejala/{id}", h.DeleteGejala)
+
+			// Manajemen akun Admin Klinik
+			r.Post(
+				"/superadmin/admin-klinik/invite",
+				h.InviteClinicAdmin,
+			)
 		})
 
 		// 2. Rute Admin Klinik (dan Superadmin)

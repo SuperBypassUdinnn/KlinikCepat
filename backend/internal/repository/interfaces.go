@@ -41,6 +41,20 @@ type UserRepository interface {
 	GetUserAccess(ctx context.Context, userID string) (*models.UserAccess, error)
 }
 
+// ClinicAdminManagementRepository mendefinisikan
+// kebutuhan database untuk pembuatan Admin Klinik.
+type ClinicAdminManagementRepository interface {
+	GetKlinikByID(
+		ctx context.Context,
+		id string,
+	) (*models.Klinik, error)
+
+	CreateUserAccess(
+		ctx context.Context,
+		access *models.UserAccess,
+	) error
+}
+
 // RepositoryInterface menggabungkan seluruh fungsionalitas repository database
 type RepositoryInterface interface {
 	KlinikRepository
