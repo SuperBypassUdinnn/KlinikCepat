@@ -204,10 +204,8 @@ export default function Navbar() {
               ) : (
                 <Link
                   to="/admin/login"
-                  className="navbar-auth-btn login"
                   id="navbar-login-btn"
                 >
-                  Login Admin
                 </Link>
               )}
             </li>
