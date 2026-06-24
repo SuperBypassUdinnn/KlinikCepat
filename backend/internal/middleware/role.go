@@ -18,32 +18,39 @@ func RequireRole(repo repository.RepositoryInterface, allowedRoles ...string) fu
 				return
 			}
 
-			// 2. Ambil role dari database
-			access, err := repo.GetUserAccess(
-				r.Context(),
-				claims.Sub,
-			)
-			if err != nil {
-				http.Error(
-					w,
-					`{"error": "Internal Server Error: Gagal memeriksa hak akses"}`,
-					http.StatusInternalServerError,
+			role := claims.Role
+			klinikID := claims.KlinikID
+
+			if role == "" || role == "authenticated" || (role == "klinik_admin" && klinikID == nil) {
+				access, err := repo.GetUserAccess(
+					r.Context(),
+					claims.Sub,
 				)
-				return
+				if err != nil {
+					http.Error(
+						w,
+						`{"error": "Internal Server Error: Gagal memeriksa hak akses"}`,
+						http.StatusInternalServerError,
+					)
+					return
+				}
+
+				if access == nil || strings.TrimSpace(access.Role) == "" {
+					http.Error(
+						w,
+						`{"error": "Forbidden: Anda belum memiliki role yang ditetapkan"}`,
+						http.StatusForbidden,
+					)
+					return
+				}
+
+				role = access.Role
+				klinikID = access.KlinikID
 			}
 
-			if access == nil || strings.TrimSpace(access.Role) == "" {
-				http.Error(
-					w,
-					`{"error": "Forbidden: Anda belum memiliki role yang ditetapkan"}`,
-					http.StatusForbidden,
-				)
-				return
-			}
-
-			if access.Role == "klinik_admin" &&
-				(access.KlinikID == nil ||
-					strings.TrimSpace(*access.KlinikID) == "") {
+			if role == "klinik_admin" &&
+				(klinikID == nil ||
+					strings.TrimSpace(*klinikID) == "") {
 				http.Error(
 					w,
 					`{"error": "Forbidden: Akun admin belum terhubung ke klinik"}`,
@@ -55,7 +62,7 @@ func RequireRole(repo repository.RepositoryInterface, allowedRoles ...string) fu
 			// 3. Periksa apakah role ada dalam daftar allowedRoles
 			isAllowed := false
 			for _, allowedRole := range allowedRoles {
-				if access.Role == allowedRole {
+				if role == allowedRole {
 					isAllowed = true
 					break
 				}
@@ -66,9 +73,9 @@ func RequireRole(repo repository.RepositoryInterface, allowedRoles ...string) fu
 				return
 			}
 
-			// Jika role sesuai, simpan role yang didapat dari DB ke context untuk digunakan lebih lanjut jika diperlukan
-			claims.Role = access.Role
-			claims.KlinikID = access.KlinikID
+			// Simpan role dan klinik_id yang tervalidasi ke claims agar bisa digunakan oleh handler
+			claims.Role = role
+			claims.KlinikID = klinikID
 			ctx := WithClaims(
 				r.Context(),
 				claims,

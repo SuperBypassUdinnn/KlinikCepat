@@ -32,6 +32,11 @@ type supabaseJWTClaims struct {
 	Email string `json:"email"`
 	Role  string `json:"role"`
 
+	AppMetadata struct {
+		Role     string `json:"role,omitempty"`
+		KlinikID string `json:"klinik_id,omitempty"`
+	} `json:"app_metadata,omitempty"`
+
 	jwt.RegisteredClaims
 }
 
@@ -240,10 +245,22 @@ func verifySupabaseJWTWithKeyfunc(
 		)
 	}
 
+	role := claims.Role
+	if claims.AppMetadata.Role != "" {
+		role = claims.AppMetadata.Role
+	}
+
+	var klinikID *string
+	if claims.AppMetadata.KlinikID != "" {
+		kID := claims.AppMetadata.KlinikID
+		klinikID = &kID
+	}
+
 	return &JWTClaims{
-		Sub:   claims.Subject,
-		Email: claims.Email,
-		Role:  claims.Role,
-		Exp:   claims.ExpiresAt.Unix(),
+		Sub:      claims.Subject,
+		Email:    claims.Email,
+		Role:     role,
+		Exp:      claims.ExpiresAt.Unix(),
+		KlinikID: klinikID,
 	}, nil
 }
