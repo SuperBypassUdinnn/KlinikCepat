@@ -19,7 +19,7 @@ function getDashboardPath(role) {
 }
 
 export default function Navbar() {
-  const { user, role, loading: authLoading, signOut } = useAuth();
+  const { user, role, loading: authLoading, signOut, clinicName } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -105,6 +105,15 @@ export default function Navbar() {
                     Dashboard
                   </Link>
                 </li>
+                <li>
+                  <span
+                    className="navbar-clinic-context"
+                    title={clinicName || "Klinik tidak diketahui"}
+                  >
+                    <small>Login di</small>
+                    <strong>{clinicName || "Klinik tidak diketahui"}</strong>
+                  </span>
+                </li>
 
                 <li>
                   <Link
@@ -140,6 +149,18 @@ export default function Navbar() {
                     id="nav-link-sa-gejala"
                   >
                     Kelola Gejala
+                  </Link>
+                </li>
+
+                <li>
+                  <Link
+                    to="/superadmin/admin-klinik"
+                    className={`navbar-nav-link ${
+                      isActive("/superadmin/admin-klinik") ? "active" : ""
+                    }`}
+                    id="nav-link-sa-admin-klinik"
+                  >
+                    Kelola Admin
                   </Link>
                 </li>
 

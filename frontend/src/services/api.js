@@ -141,6 +141,14 @@ export function deleteGejala(id) {
   });
 }
 
+// ─── Manajemen Admin Klinik — Superadmin ────────────────
+export function createClinicAdmin(payload) {
+  return request("/superadmin/admin-klinik", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export default {
   getCurrentUser,
   getClinics,
@@ -156,4 +164,5 @@ export default {
   createGejala,
   updateGejala,
   deleteGejala,
+  createClinicAdmin,
 };

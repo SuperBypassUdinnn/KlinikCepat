@@ -21,6 +21,7 @@ export function AuthProvider({ children }) {
   const [role, setRole] = useState(null);
   const [clinicId, setClinicId] = useState(null);
   const [authError, setAuthError] = useState(null);
+  const [clinicName, setClinicName] = useState(null);
 
   const clearAuthState = useCallback(() => {
     setUser(null);
@@ -28,6 +29,7 @@ export function AuthProvider({ children }) {
     setRole(null);
     setClinicId(null);
     setAuthError(null);
+    setClinicName(null);
   }, []);
 
   const syncSession = useCallback(
@@ -45,6 +47,7 @@ export function AuthProvider({ children }) {
 
       try {
         const currentUser = await getCurrentUser();
+        setClinicName(currentUser.nama_klinik ?? null);
 
         setProfile(currentUser);
         setRole(currentUser.role);
@@ -56,6 +59,7 @@ export function AuthProvider({ children }) {
         setRole(null);
         setClinicId(null);
         setAuthError(error.message);
+        setClinicName(null);
 
         return null;
       } finally {
@@ -151,6 +155,7 @@ export function AuthProvider({ children }) {
       profile,
       role,
       clinicId,
+      clinicName,
       authError,
       signIn,
       signUp,
@@ -162,6 +167,7 @@ export function AuthProvider({ children }) {
       profile,
       role,
       clinicId,
+      clinicName,
       authError,
       signIn,
       signUp,

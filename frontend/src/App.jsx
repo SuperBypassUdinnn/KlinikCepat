@@ -14,6 +14,7 @@ import DashboardAdmin from "./pages/AdminKlinik/DashboardAdmin";
 // Super Admin Pages
 import ManajemenKlinik from "./pages/SuperAdmin/ManajemenKlinik";
 import ManajemenGejala from "./pages/SuperAdmin/ManajemenGejala";
+import ManajemenAdminKlinik from "./pages/SuperAdmin/ManajemenAdminKlinik";
 
 function App() {
   return (
@@ -56,6 +57,15 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["superadmin"]}>
               <ManajemenGejala />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/superadmin/admin-klinik"
+          element={
+            <ProtectedRoute allowedRoles={["superadmin"]}>
+              <ManajemenAdminKlinik />
             </ProtectedRoute>
           }
         />

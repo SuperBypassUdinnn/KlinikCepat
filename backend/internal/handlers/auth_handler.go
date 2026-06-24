@@ -32,6 +32,23 @@ func (h *Handler) GetCurrentUser(
 		KlinikID: claims.KlinikID,
 	}
 
+	if response.KlinikID != nil {
+		klinik, err := h.Repo.GetKlinikByID(
+			r.Context(),
+			*response.KlinikID,
+		)
+		if err != nil {
+			http.Error(
+				w,
+				`{"error":"Gagal mengambil data klinik user"}`,
+				http.StatusInternalServerError,
+			)
+			return
+		}
+
+		response.NamaKlinik = &klinik.NamaKlinik
+	}
+
 	w.Header().Set(
 		"Content-Type",
 		"application/json",

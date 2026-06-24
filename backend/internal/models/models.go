@@ -43,10 +43,11 @@ type UserAccess struct {
 
 // AuthMeResponse adalah respons endpoint GET /api/v1/auth/me.
 type AuthMeResponse struct {
-	ID       string  `json:"id"`
-	Email    string  `json:"email"`
-	Role     string  `json:"role"`
-	KlinikID *string `json:"klinik_id"`
+	ID         string  `json:"id"`
+	Email      string  `json:"email"`
+	Role       string  `json:"role"`
+	KlinikID   *string `json:"klinik_id"`
+	NamaKlinik *string `json:"nama_klinik"`
 }
 
 // CreateClinicAdminRequest adalah payload Superadmin

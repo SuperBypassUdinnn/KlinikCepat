@@ -13,6 +13,10 @@ import (
 func TestGetCurrentUser(t *testing.T) {
 	t.Run("berhasil mengembalikan user klinik admin", func(t *testing.T) {
 		repo := NewMockRepository()
+		repo.Kliniks["mock-klinik-id"] = &models.Klinik{
+			ID:         "mock-klinik-id",
+			NamaKlinik: "Klinik Sehat Selalu",
+		}
 		h := NewHandler(repo, nil)
 
 		klinikID := "mock-klinik-id"
@@ -48,9 +52,11 @@ func TestGetCurrentUser(t *testing.T) {
 
 		var response models.AuthMeResponse
 
-		if err := json.NewDecoder(
+		err := json.NewDecoder(
 			recorder.Body,
-		).Decode(&response); err != nil {
+		).Decode(&response)
+
+		if err != nil {
 			t.Fatalf(
 				"gagal decode response: %v",
 				err,
@@ -64,16 +70,18 @@ func TestGetCurrentUser(t *testing.T) {
 			)
 		}
 
-		if response.KlinikID == nil {
+		if response.NamaKlinik == nil {
 			t.Fatal(
-				"klinik_id seharusnya tidak nil",
+				"nama_klinik seharusnya tidak nil",
 			)
 		}
 
-		if *response.KlinikID != "mock-klinik-id" {
-			t.Errorf(
-				"klinik_id = %s, want mock-klinik-id",
-				*response.KlinikID,
+		if *response.NamaKlinik !=
+			"Klinik Sehat Selalu" {
+			t.Fatalf(
+				"nama_klinik = %q, want %q",
+				*response.NamaKlinik,
+				"Klinik Sehat Selalu",
 			)
 		}
 	})
