@@ -6,22 +6,42 @@ import (
 )
 
 // CreateAntrean menambahkan antrean baru ke database
-func (r *RepositoryWrapper) CreateAntrean(ctx context.Context, a *models.Antrean) error {
+func (r *RepositoryWrapper) CreateAntrean(
+	ctx context.Context,
+	a *models.Antrean,
+) error {
 	query := `
-		INSERT INTO antrean (klinik_id, nama_pasien, total_skor, status_triage, status_antrean)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, created_at
+		INSERT INTO antrean (
+			klinik_id,
+			nama_pasien,
+			email_pasien,
+			kode_tiket,
+			total_skor,
+			status_triage,
+			status_antrean
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING
+			id,
+			public_token::text,
+			created_at
 	`
-	err := r.Pool.QueryRow(
+
+	return r.Pool.QueryRow(
 		ctx,
 		query,
 		a.KlinikID,
 		a.NamaPasien,
+		a.EmailPasien,
+		a.KodeTiket,
 		a.TotalSkor,
 		a.StatusTriage,
 		a.StatusAntrean,
-	).Scan(&a.ID, &a.CreatedAt)
-	return err
+	).Scan(
+		&a.ID,
+		&a.PublicToken,
+		&a.CreatedAt,
+	)
 }
 
 // GetAntreanByID mengambil detail antrean berdasarkan ID
@@ -132,4 +152,96 @@ func (r *RepositoryWrapper) UpdateStatusAntrean(
 	}
 
 	return commandTag.RowsAffected() > 0, nil
+}
+
+func (r *RepositoryWrapper) GetPublicTicketByToken(
+	ctx context.Context,
+	publicToken string,
+) (*models.PublicTicket, error) {
+	query := `
+		SELECT
+			a.public_token::text,
+			COALESCE(a.kode_tiket, ''),
+			a.nama_pasien,
+			k.nama_klinik,
+			a.total_skor,
+			a.status_triage,
+			a.status_antrean,
+			a.created_at
+		FROM antrean AS a
+		JOIN klinik AS k
+			ON k.id = a.klinik_id
+		WHERE a.public_token::text = $1
+	`
+
+	var ticket models.PublicTicket
+
+	err := r.Pool.QueryRow(
+		ctx,
+		query,
+		publicToken,
+	).Scan(
+		&ticket.PublicToken,
+		&ticket.KodeTiket,
+		&ticket.NamaPasien,
+		&ticket.NamaKlinik,
+		&ticket.TotalSkor,
+		&ticket.StatusTriage,
+		&ticket.StatusAntrean,
+		&ticket.CreatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &ticket, nil
+}
+
+func (r *RepositoryWrapper) CheckPublicTicket(
+	ctx context.Context,
+	kodeTiket string,
+	email string,
+) (*models.PublicTicket, error) {
+	query := `
+		SELECT
+			a.public_token::text,
+			COALESCE(a.kode_tiket, ''),
+			a.nama_pasien,
+			k.nama_klinik,
+			a.total_skor,
+			a.status_triage,
+			a.status_antrean,
+			a.created_at
+		FROM antrean AS a
+		JOIN klinik AS k
+			ON k.id = a.klinik_id
+		WHERE UPPER(a.kode_tiket) = UPPER($1)
+		  AND LOWER(a.email_pasien) = LOWER($2)
+		LIMIT 1
+	`
+
+	var ticket models.PublicTicket
+
+	err := r.Pool.QueryRow(
+		ctx,
+		query,
+		kodeTiket,
+		email,
+	).Scan(
+		&ticket.PublicToken,
+		&ticket.KodeTiket,
+		&ticket.NamaPasien,
+		&ticket.NamaKlinik,
+		&ticket.TotalSkor,
+		&ticket.StatusTriage,
+		&ticket.StatusAntrean,
+		&ticket.CreatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &ticket, nil
 }

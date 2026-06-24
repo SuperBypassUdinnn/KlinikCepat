@@ -4,7 +4,10 @@ import (
 	"KlinikCepat/internal/models"
 	"context"
 	"errors"
+	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // MockRepository adalah implementasi in-memory dari repository.RepositoryInterface
@@ -112,11 +115,82 @@ func (m *MockRepository) DeleteGejala(ctx context.Context, id string) error {
 }
 
 // CreateAntrean menambahkan antrean baru ke MockRepository
-func (m *MockRepository) CreateAntrean(ctx context.Context, a *models.Antrean) error {
-	a.ID = "mock-antrean-id"
-	a.CreatedAt = time.Now()
-	m.Antreans[a.ID] = a
+func (m *MockRepository) CreateAntrean(
+	ctx context.Context,
+	antrean *models.Antrean,
+) error {
+	antrean.ID = "mock-antrean-id"
+
+	if antrean.PublicToken == "" {
+		antrean.PublicToken =
+			"11111111-1111-1111-1111-111111111111"
+	}
+
+	antrean.CreatedAt = time.Now()
+
+	m.Antreans[antrean.ID] = antrean
+
 	return nil
+}
+
+func (m *MockRepository) GetPublicTicketByToken(
+	ctx context.Context,
+	publicToken string,
+) (*models.PublicTicket, error) {
+	for _, antrean := range m.Antreans {
+		if antrean.PublicToken != publicToken {
+			continue
+		}
+
+		namaKlinik := ""
+
+		if klinik, exists :=
+			m.Kliniks[antrean.KlinikID]; exists {
+			namaKlinik = klinik.NamaKlinik
+		}
+
+		return &models.PublicTicket{
+			PublicToken:   antrean.PublicToken,
+			KodeTiket:     antrean.KodeTiket,
+			NamaPasien:    antrean.NamaPasien,
+			NamaKlinik:    namaKlinik,
+			TotalSkor:     antrean.TotalSkor,
+			StatusTriage:  antrean.StatusTriage,
+			StatusAntrean: antrean.StatusAntrean,
+			CreatedAt:     antrean.CreatedAt,
+		}, nil
+	}
+
+	return nil, pgx.ErrNoRows
+}
+
+func (m *MockRepository) CheckPublicTicket(
+	ctx context.Context,
+	kodeTiket string,
+	email string,
+) (*models.PublicTicket, error) {
+	for _, antrean := range m.Antreans {
+		kodeSesuai := strings.EqualFold(
+			antrean.KodeTiket,
+			kodeTiket,
+		)
+
+		emailSesuai := strings.EqualFold(
+			antrean.EmailPasien,
+			email,
+		)
+
+		if !kodeSesuai || !emailSesuai {
+			continue
+		}
+
+		return m.GetPublicTicketByToken(
+			ctx,
+			antrean.PublicToken,
+		)
+	}
+
+	return nil, pgx.ErrNoRows
 }
 
 // GetAntreanByID mengambil antrean berdasarkan ID

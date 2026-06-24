@@ -81,15 +81,28 @@ export default function Navbar() {
           </button>
           <ul className={`navbar-nav ${isOpen ? "open" : ""}`}>
             {!user && !authLoading && (
-              <li>
-                <Link
-                  to="/"
-                  className={`navbar-nav-link ${isActive("/") ? "active" : ""}`}
-                  id="nav-link-home"
-                >
-                  Cari Klinik
-                </Link>
-              </li>
+              <>
+                <li>
+                  <Link
+                    to="/"
+                    className={`navbar-nav-link ${isActive("/") ? "active" : ""}`}
+                    id="nav-link-home"
+                  >
+                    Cari Klinik
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/cek-tiket"
+                    className={`navbar-nav-link ${
+                      isActive("/cek-tiket") ? "active" : ""
+                    }`}
+                    id="nav-link-check-ticket"
+                  >
+                    Cek Tiket
+                  </Link>
+                </li>
+              </>
             )}
 
             {user && role === "klinik_admin" && (

@@ -2,32 +2,86 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
+	"log"
 	"net/http"
 	"strings"
 
 	"KlinikCepat/internal/middleware"
 	"KlinikCepat/internal/models"
+	"KlinikCepat/internal/services"
 
 	"github.com/go-chi/chi/v5"
 )
 
 // ProcessTriage handles POST /api/v1/triage
-func (h *Handler) ProcessTriage(w http.ResponseWriter, r *http.Request) {
-	var req models.TriageRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error": "Payload JSON tidak valid"}`, http.StatusBadRequest)
+// ProcessTriage handles POST /api/v1/triage
+func (h *Handler) ProcessTriage(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	// Gunakan struct payload khusus agar JSON pasti
+	// terbaca sesuai nama field yang dikirim frontend.
+	var payload struct {
+		KlinikID    string               `json:"klinik_id"`
+		NamaPasien  string               `json:"nama_pasien"`
+		EmailPasien string               `json:"email_pasien"`
+		Gejala      []models.GejalaInput `json:"gejala"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&payload); err != nil {
+		http.Error(
+			w,
+			`{"error":"Payload JSON tidak valid"}`,
+			http.StatusBadRequest,
+		)
 		return
 	}
 
-	res, err := h.TriageService.ProcessTriage(r.Context(), &req)
+	req := models.TriageRequest{
+		KlinikID:    strings.TrimSpace(payload.KlinikID),
+		NamaPasien:  strings.TrimSpace(payload.NamaPasien),
+		EmailPasien: strings.TrimSpace(payload.EmailPasien),
+		Gejala:      payload.Gejala,
+	}
+
+	res, err := h.TriageService.ProcessTriage(
+		r.Context(),
+		&req,
+	)
 	if err != nil {
-		http.Error(w, `{"error": "`+err.Error()+`"}`, http.StatusInternalServerError)
+		var validationError *services.TriageValidationError
+
+		if errors.As(err, &validationError) {
+			writeTicketError(
+				w,
+				http.StatusBadRequest,
+				validationError.Error(),
+			)
+			return
+		}
+
+		log.Printf(
+			"Gagal memproses triage: %v",
+			err,
+		)
+
+		writeTicketError(
+			w,
+			http.StatusInternalServerError,
+			"Gagal memproses pendaftaran antrean",
+		)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(res)
+	writeTicketJSON(
+		w,
+		http.StatusCreated,
+		res,
+	)
 }
 
 // GetAntreanByKlinikID handles GET /api/v1/admin/antrean

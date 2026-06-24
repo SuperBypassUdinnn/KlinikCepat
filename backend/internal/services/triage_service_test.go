@@ -84,6 +84,7 @@ func TestTriageService_ProcessTriage(t *testing.T) {
 			req: &models.TriageRequest{
 				KlinikID:   "klinik-1",
 				NamaPasien: "Pasien Merah 1",
+				EmailPasien: "pasien@example.com",
 				Gejala: []models.GejalaInput{
 					{GejalaID: "g3", SkalaKeparahan: 2}, // Nyeri Dada Kiri (8) * 2 = 16
 				},
@@ -97,6 +98,7 @@ func TestTriageService_ProcessTriage(t *testing.T) {
 			req: &models.TriageRequest{
 				KlinikID:   "klinik-1",
 				NamaPasien: "Pasien Fatal",
+				EmailPasien: "pasien@example.com",
 				Gejala: []models.GejalaInput{
 					{GejalaID: "g1", SkalaKeparahan: 1}, // Pendarahan Hebat (10) * 1 = 10 (Fatal!)
 				},
@@ -110,6 +112,7 @@ func TestTriageService_ProcessTriage(t *testing.T) {
 			req: &models.TriageRequest{
 				KlinikID:   "klinik-1",
 				NamaPasien: "Pasien Kuning",
+				EmailPasien: "pasien@example.com",
 				Gejala: []models.GejalaInput{
 					{GejalaID: "g4", SkalaKeparahan: 2}, // Demam (5) * 2 = 10
 				},
@@ -123,6 +126,7 @@ func TestTriageService_ProcessTriage(t *testing.T) {
 			req: &models.TriageRequest{
 				KlinikID:   "klinik-1",
 				NamaPasien: "Pasien Hijau",
+				EmailPasien: "pasien@example.com",
 				Gejala: []models.GejalaInput{
 					{GejalaID: "g5", SkalaKeparahan: 3}, // Batuk (1) * 3 = 3
 				},
@@ -136,6 +140,7 @@ func TestTriageService_ProcessTriage(t *testing.T) {
 			req: &models.TriageRequest{
 				KlinikID:   "klinik-1",
 				NamaPasien: "Pasien Non-Darurat",
+				EmailPasien: "pasien@example.com",
 				Gejala: []models.GejalaInput{
 					{GejalaID: "g6", SkalaKeparahan: 1}, // Layanan Non-Medis (0) * 1 = 0
 				},
@@ -149,6 +154,7 @@ func TestTriageService_ProcessTriage(t *testing.T) {
 			req: &models.TriageRequest{
 				KlinikID:   "",
 				NamaPasien: "Pasien Tanpa Klinik",
+				EmailPasien: "pasien@example.com",
 				Gejala: []models.GejalaInput{
 					{GejalaID: "g5", SkalaKeparahan: 1},
 				},
@@ -160,6 +166,7 @@ func TestTriageService_ProcessTriage(t *testing.T) {
 			req: &models.TriageRequest{
 				KlinikID:   "klinik-1",
 				NamaPasien: "",
+				EmailPasien: "pasien@example.com",
 				Gejala: []models.GejalaInput{
 					{GejalaID: "g5", SkalaKeparahan: 1},
 				},
@@ -171,6 +178,7 @@ func TestTriageService_ProcessTriage(t *testing.T) {
 			req: &models.TriageRequest{
 				KlinikID:   "klinik-1",
 				NamaPasien: "Pasien Tanpa Gejala",
+				EmailPasien: "pasien@example.com",
 				Gejala:     []models.GejalaInput{},
 			},
 			expectError: true,

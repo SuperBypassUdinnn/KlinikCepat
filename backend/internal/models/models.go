@@ -27,6 +27,9 @@ type Antrean struct {
 	ID            string    `json:"id" db:"id"`
 	KlinikID      string    `json:"klinik_id" db:"klinik_id"`
 	NamaPasien    string    `json:"nama_pasien" db:"nama_pasien"`
+	EmailPasien   string    `json:"email_pasien" db:"email_pasien"`
+	PublicToken   string    `json:"public_token" db:"public_token"`
+	KodeTiket     string    `json:"kode_tiket" db:"kode_tiket"`
 	TotalSkor     int       `json:"total_skor" db:"total_skor"`
 	StatusTriage  string    `json:"status_triage" db:"status_triage"`
 	StatusAntrean string    `json:"status_antrean" db:"status_antrean"`
@@ -85,9 +88,10 @@ type GejalaInput struct {
 
 // TriageRequest adalah payload JSON yang dikirim Frontend saat pasien mendaftar
 type TriageRequest struct {
-	KlinikID   string        `json:"klinik_id"`
-	NamaPasien string        `json:"nama_pasien"`
-	Gejala     []GejalaInput `json:"gejala"`
+	KlinikID    string        `json:"klinik_id"`
+	NamaPasien  string        `json:"nama_pasien"`
+	EmailPasien string        `json:"email_pasien"`
+	Gejala      []GejalaInput `json:"gejala"`
 }
 
 // TriageResponse dikembalikan setelah perhitungan sukses
@@ -95,5 +99,26 @@ type TriageResponse struct {
 	AntreanID    string `json:"antrean_id"`
 	StatusTriage string `json:"status_triage"`
 	TotalSkor    int    `json:"total_skor"`
+	KodeTiket    string `json:"kode_tiket"`
+	PublicToken  string `json:"public_token"`
 	Pesan        string `json:"pesan"`
+}
+
+// PublicTicket adalah data tiket yang aman ditampilkan
+// kepada pasien tanpa login.
+type PublicTicket struct {
+	PublicToken   string    `json:"public_token"`
+	KodeTiket     string    `json:"kode_tiket"`
+	NamaPasien    string    `json:"nama_pasien"`
+	NamaKlinik    string    `json:"nama_klinik"`
+	TotalSkor     int       `json:"total_skor"`
+	StatusTriage  string    `json:"status_triage"`
+	StatusAntrean string    `json:"status_antrean"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+// CheckTicketRequest adalah payload halaman cek tiket.
+type CheckTicketRequest struct {
+	KodeTiket string `json:"kode_tiket"`
+	Email     string `json:"email"`
 }

@@ -1,31 +1,35 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { getGejala, getClinicById, submitTriage } from '../../services/api';
-import Card from '../../components/Card';
-import Button from '../../components/Button';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import { FiCheck, FiArrowLeft, FiSend } from 'react-icons/fi';
-import './TriageForm.css';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { getGejala, getClinicById, submitTriage } from "../../services/api";
+import Card from "../../components/Card";
+import Button from "../../components/Button";
+import LoadingSpinner from "../../components/LoadingSpinner";
+import { FiCheck, FiArrowLeft, FiSend } from "react-icons/fi";
+import "./TriageForm.css";
 
 export default function TriageForm() {
   const { klinikId } = useParams();
   const navigate = useNavigate();
 
   const [gejalaList, setGejalaList] = useState([]);
-  const [clinicName, setClinicName] = useState('');
-  const [namaPasien, setNamaPasien] = useState('');
+  const [clinicName, setClinicName] = useState("");
+  const [namaPasien, setNamaPasien] = useState("");
+  const [emailPasien, setEmailPasien] = useState("");
   const [selectedGejala, setSelectedGejala] = useState({}); // { gejala_id: skala_keparahan }
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [step, setStep] = useState(1); // 1: nama, 2: gejala
 
+  const selectedIds = Object.keys(selectedGejala);
+  const selectedCount = selectedIds.length;
+
   // Ambil data gejala & nama klinik
   useEffect(() => {
     Promise.all([getGejala(), getClinicById(klinikId)])
       .then(([gejala, clinic]) => {
         setGejalaList(gejala || []);
-        setClinicName(clinic?.nama_klinik || '');
+        setClinicName(clinic?.nama_klinik || "");
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -47,13 +51,18 @@ export default function TriageForm() {
   };
 
   const handleSubmit = async () => {
-    const selectedIds = Object.keys(selectedGejala);
     if (!namaPasien.trim()) {
-      setError('Nama pasien wajib diisi.');
+      setError("Nama pasien wajib diisi.");
       return;
     }
+
+    if (!emailPasien.trim()) {
+      setError("Email pasien wajib diisi.");
+      return;
+    }
+
     if (selectedIds.length === 0) {
-      setError('Pilih minimal satu gejala.');
+      setError("Pilih minimal satu gejala.");
       return;
     }
 
@@ -64,6 +73,7 @@ export default function TriageForm() {
       const payload = {
         klinik_id: klinikId,
         nama_pasien: namaPasien.trim(),
+        email_pasien: emailPasien.trim().toLowerCase(),
         gejala: selectedIds.map((id) => ({
           gejala_id: id,
           skala_keparahan: selectedGejala[id],
@@ -72,33 +82,41 @@ export default function TriageForm() {
 
       const result = await submitTriage(payload);
 
-      // Navigasi ke halaman tiket dengan data hasil triage
-      navigate('/ticket', {
-        state: {
-          ...result,
-          nama_pasien: namaPasien.trim(),
-          nama_klinik: clinicName,
-        },
+      navigate(`/ticket/${result.public_token}`, {
+        replace: true,
       });
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Gagal mendaftarkan antrean.");
     } finally {
       setSubmitting(false);
     }
   };
 
+  const payload = {
+    klinik_id: klinikId,
+    nama_pasien: namaPasien.trim(),
+    email_pasien: emailPasien.trim().toLowerCase(),
+    gejala: selectedIds.map((id) => ({
+      gejala_id: id,
+      skala_keparahan: selectedGejala[id],
+    })),
+  };
+
   if (loading) {
     return <LoadingSpinner text="Memuat kuesioner gejala..." />;
   }
-
-  const selectedCount = Object.keys(selectedGejala).length;
-
+  
   return (
     <div className="container page-wrapper triage-page">
       {/* Header */}
       <div className="triage-header">
         <h1>Kuesioner Triage</h1>
-        <p style={{ color: 'var(--color-gray-500)', marginBottom: 'var(--space-sm)' }}>
+        <p
+          style={{
+            color: "var(--color-gray-500)",
+            marginBottom: "var(--space-sm)",
+          }}
+        >
           Isi data diri dan pilih gejala yang Anda alami saat ini
         </p>
         {clinicName && (
@@ -108,18 +126,21 @@ export default function TriageForm() {
 
       {/* Step Indicator */}
       <div className="triage-step-indicator">
-        <div className={`step-dot ${step >= 1 ? (step > 1 ? 'completed' : 'active') : 'inactive'}`}>
-          {step > 1 ? <FiCheck size={16} /> : '1'}
+        <div
+          className={`step-dot ${step >= 1 ? (step > 1 ? "completed" : "active") : "inactive"}`}
+        >
+          {step > 1 ? <FiCheck size={16} /> : "1"}
         </div>
-        <div className={`step-line ${step > 1 ? 'completed' : ''}`} />
-        <div className={`step-dot ${step >= 2 ? 'active' : 'inactive'}`}>
-          2
-        </div>
+        <div className={`step-line ${step > 1 ? "completed" : ""}`} />
+        <div className={`step-dot ${step >= 2 ? "active" : "inactive"}`}>2</div>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="alert alert-danger animate-fade-in" style={{ marginBottom: '1rem' }}>
+        <div
+          className="alert alert-danger animate-fade-in"
+          style={{ marginBottom: "1rem" }}
+        >
           {error}
         </div>
       )}
@@ -128,7 +149,9 @@ export default function TriageForm() {
       {step === 1 && (
         <Card className="triage-form-card">
           <div className="card-body">
-            <h3 style={{ marginBottom: 'var(--space-lg)' }}>Data Diri Pasien</h3>
+            <h3 style={{ marginBottom: "var(--space-lg)" }}>
+              Data Diri Pasien
+            </h3>
 
             <div className="form-group">
               <label className="form-label" htmlFor="nama-pasien">
@@ -145,18 +168,36 @@ export default function TriageForm() {
               />
             </div>
 
+            <div className="form-group">
+              <label className="form-label" htmlFor="email-pasien">
+                Email
+              </label>
+
+              <input
+                id="email-pasien"
+                type="email"
+                className="form-input"
+                placeholder="nama@email.com"
+                value={emailPasien}
+                onChange={(event) => setEmailPasien(event.target.value)}
+                required
+              />
+
+              <span className="form-hint">
+                Email digunakan bersama kode tiket untuk mengecek antrean
+                kembali.
+              </span>
+            </div>
+
             <div className="triage-form-actions">
-              <Button
-                variant="secondary"
-                onClick={() => navigate('/')}
-              >
+              <Button variant="secondary" onClick={() => navigate("/")}>
                 <FiArrowLeft size={16} />
                 Kembali
               </Button>
               <Button
                 variant="primary"
                 block
-                disabled={!namaPasien.trim()}
+                disabled={!namaPasien.trim() || !emailPasien.trim()}
                 onClick={() => {
                   setError(null);
                   setStep(2);
@@ -173,8 +214,12 @@ export default function TriageForm() {
       {step === 2 && (
         <Card className="triage-form-card">
           <div className="card-body">
-            <h3 style={{ marginBottom: 'var(--space-xs)' }}>Pilih Gejala yang Dialami</h3>
-            <p style={{ fontSize: '0.875rem', marginBottom: 'var(--space-lg)' }}>
+            <h3 style={{ marginBottom: "var(--space-xs)" }}>
+              Pilih Gejala yang Dialami
+            </h3>
+            <p
+              style={{ fontSize: "0.875rem", marginBottom: "var(--space-lg)" }}
+            >
               Pilih satu atau lebih gejala, lalu tentukan tingkat keparahannya
             </p>
 
@@ -186,7 +231,7 @@ export default function TriageForm() {
                 return (
                   <div
                     key={gejala.id}
-                    className={`gejala-item ${isSelected ? 'selected' : ''}`}
+                    className={`gejala-item ${isSelected ? "selected" : ""}`}
                     id={`gejala-item-${gejala.id}`}
                   >
                     <div
@@ -196,32 +241,42 @@ export default function TriageForm() {
                       {isSelected && <FiCheck size={14} />}
                     </div>
 
-                    <div className="gejala-info" onClick={() => toggleGejala(gejala.id)}>
+                    <div
+                      className="gejala-info"
+                      onClick={() => toggleGejala(gejala.id)}
+                    >
                       <div className="gejala-nama">{gejala.nama_gejala}</div>
-                      <div className={`gejala-bobot ${gejala.bobot_urgensi >= 8 ? 'high' : ''}`}>
+                      <div
+                        className={`gejala-bobot ${gejala.bobot_urgensi >= 8 ? "high" : ""}`}
+                      >
                         Bobot urgensi: {gejala.bobot_urgensi}
-                        {gejala.bobot_urgensi === 10 && ' ⚠ Kritis'}
+                        {gejala.bobot_urgensi === 10 && " ⚠ Kritis"}
                       </div>
 
                       {/* Severity selector (muncul jika dipilih) */}
                       {isSelected && (
-                        <div className="severity-section" onClick={(e) => e.stopPropagation()}>
-                          <div className="severity-label">Tingkat Keparahan:</div>
+                        <div
+                          className="severity-section"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="severity-label">
+                            Tingkat Keparahan:
+                          </div>
                           <div className="severity-options">
                             <button
-                              className={`severity-btn ${currentSeverity === 1 ? 'active-1' : ''}`}
+                              className={`severity-btn ${currentSeverity === 1 ? "active-1" : ""}`}
                               onClick={() => setSeverity(gejala.id, 1)}
                             >
                               1 — Ringan
                             </button>
                             <button
-                              className={`severity-btn ${currentSeverity === 2 ? 'active-2' : ''}`}
+                              className={`severity-btn ${currentSeverity === 2 ? "active-2" : ""}`}
                               onClick={() => setSeverity(gejala.id, 2)}
                             >
                               2 — Sedang
                             </button>
                             <button
-                              className={`severity-btn ${currentSeverity === 3 ? 'active-3' : ''}`}
+                              className={`severity-btn ${currentSeverity === 3 ? "active-3" : ""}`}
                               onClick={() => setSeverity(gejala.id, 3)}
                             >
                               3 — Berat
