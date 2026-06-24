@@ -115,6 +115,15 @@ func main() {
 		r.Get("/gejala/{id}", h.GetGejalaByID)
 
 		r.Post("/triage", h.ProcessTriage)
+		r.Get(
+			"/ticket/{publicToken}",
+			h.GetPublicTicket,
+		)
+
+		r.Post(
+			"/ticket/check",
+			h.CheckPublicTicket,
+		)
 
 		// Profil user terautentikasi.
 		r.Group(func(r chi.Router) {

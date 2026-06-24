@@ -1,33 +1,111 @@
 package services
 
 import (
-	"KlinikCepat/internal/models"
-	"KlinikCepat/internal/repository"
 	"context"
+	"crypto/rand"
 	"errors"
+	"fmt"
+	"math/big"
+	"net/mail"
+	"strings"
+
+	"KlinikCepat/internal/models"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
+
+type TriageValidationError struct {
+	Message string
+}
+
+func (e *TriageValidationError) Error() string {
+	return e.Message
+}
+
+func newTriageValidationError(
+	message string,
+) error {
+	return &TriageValidationError{
+		Message: message,
+	}
+}
+
+type TriageRepository interface {
+	GetAllGejala(
+		ctx context.Context,
+	) ([]models.Gejala, error)
+
+	CreateAntrean(
+		ctx context.Context,
+		antrean *models.Antrean,
+	) error
+}
 
 // TriageService menangani logika bisnis kalkulasi triage
 type TriageService struct {
-	repo repository.RepositoryInterface
+	repo TriageRepository
 }
 
 // NewTriageService membuat instance TriageService baru
-func NewTriageService(repo repository.RepositoryInterface) *TriageService {
-	return &TriageService{repo: repo}
+func NewTriageService(
+	repo TriageRepository,
+) *TriageService {
+	return &TriageService{
+		repo: repo,
+	}
 }
 
 // ProcessTriage memproses formulir gejala pasien, menghitung skor urgensi,
 // menentukan status triage (Merah/Kuning/Hijau), dan memasukkan ke dalam antrean.
-func (s *TriageService) ProcessTriage(ctx context.Context, req *models.TriageRequest) (*models.TriageResponse, error) {
+func (s *TriageService) ProcessTriage(
+	ctx context.Context,
+	req *models.TriageRequest,
+) (*models.TriageResponse, error) {
+	if req == nil {
+		return nil, newTriageValidationError(
+			"payload triage wajib diisi",
+		)
+	}
+
+	req.KlinikID = strings.TrimSpace(
+		req.KlinikID,
+	)
+
+	req.NamaPasien = strings.TrimSpace(
+		req.NamaPasien,
+	)
+
+	req.EmailPasien = strings.TrimSpace(
+		req.EmailPasien,
+	)
+
 	if req.KlinikID == "" {
-		return nil, errors.New("klinik_id wajib diisi")
+		return nil, newTriageValidationError(
+			"klinik_id wajib diisi",
+		)
 	}
+
 	if req.NamaPasien == "" {
-		return nil, errors.New("nama_pasien wajib diisi")
+		return nil, newTriageValidationError(
+			"nama_pasien wajib diisi",
+		)
 	}
+
+	normalizedEmail, err := normalizePatientEmail(
+		req.EmailPasien,
+	)
+	if err != nil {
+		return nil, newTriageValidationError(
+			"format email_pasien tidak valid",
+		)
+	}
+
+	req.EmailPasien = normalizedEmail
+
 	if len(req.Gejala) == 0 {
-		return nil, errors.New("paling tidak satu gejala harus dipilih")
+		return nil, newTriageValidationError(
+			"paling tidak satu gejala harus dipilih",
+		)
 	}
 
 	// 1. Ambil seluruh katalog gejala dari database untuk mendapatkan bobot
@@ -83,14 +161,44 @@ func (s *TriageService) ProcessTriage(ctx context.Context, req *models.TriageReq
 	antrean := models.Antrean{
 		KlinikID:      req.KlinikID,
 		NamaPasien:    req.NamaPasien,
+		EmailPasien:   req.EmailPasien,
 		TotalSkor:     totalSkor,
 		StatusTriage:  statusTriage,
 		StatusAntrean: "Menunggu",
 	}
 
-	err = s.repo.CreateAntrean(ctx, &antrean)
-	if err != nil {
-		return nil, err
+	var createErr error
+
+	for attempt := 0; attempt < 5; attempt++ {
+		kodeTiket, err := generateTicketCode()
+		if err != nil {
+			return nil, fmt.Errorf(
+				"gagal menghasilkan kode tiket: %w",
+				err,
+			)
+		}
+
+		antrean.KodeTiket = kodeTiket
+
+		createErr = s.repo.CreateAntrean(
+			ctx,
+			&antrean,
+		)
+
+		if createErr == nil {
+			break
+		}
+
+		if !isTicketCodeConflict(createErr) {
+			return nil, createErr
+		}
+	}
+
+	if createErr != nil {
+		return nil, fmt.Errorf(
+			"gagal menghasilkan kode tiket unik: %w",
+			createErr,
+		)
 	}
 
 	// 5. Kembalikan respons sukses
@@ -103,6 +211,64 @@ func (s *TriageService) ProcessTriage(ctx context.Context, req *models.TriageReq
 		AntreanID:    antrean.ID,
 		StatusTriage: statusTriage,
 		TotalSkor:    totalSkor,
+		KodeTiket:    antrean.KodeTiket,
+		PublicToken:  antrean.PublicToken,
 		Pesan:        pesan,
 	}, nil
+}
+
+const ticketCharacters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+func generateTicketCode() (string, error) {
+	const length = 6
+
+	result := make([]byte, length)
+
+	for index := range result {
+		randomIndex, err := rand.Int(
+			rand.Reader,
+			big.NewInt(
+				int64(len(ticketCharacters)),
+			),
+		)
+		if err != nil {
+			return "", err
+		}
+
+		result[index] =
+			ticketCharacters[randomIndex.Int64()]
+	}
+
+	return "KC-" + string(result), nil
+}
+
+func normalizePatientEmail(
+	value string,
+) (string, error) {
+	value = strings.TrimSpace(value)
+
+	address, err := mail.ParseAddress(value)
+	if err != nil {
+		return "", err
+	}
+
+	if address.Address != value {
+		return "", errors.New(
+			"format email tidak valid",
+		)
+	}
+
+	return strings.ToLower(address.Address), nil
+}
+
+func isTicketCodeConflict(err error) bool {
+	var pgError *pgconn.PgError
+
+	if !errors.As(err, &pgError) {
+		return false
+	}
+
+	return pgError.Code == "23505" &&
+		pgError.ConstraintName ==
+			"idx_antrean_kode_tiket_unique"
 }

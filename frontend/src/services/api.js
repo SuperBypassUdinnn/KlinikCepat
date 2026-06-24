@@ -149,6 +149,18 @@ export function createClinicAdmin(payload) {
   });
 }
 
+// ─── Tiket Publik ───────────────────────────────────────
+export function getPublicTicket(publicToken) {
+  return request(`/ticket/${encodeURIComponent(publicToken)}`);
+}
+
+export function checkPublicTicket(payload) {
+  return request("/ticket/check", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export default {
   getCurrentUser,
   getClinics,
@@ -165,4 +177,6 @@ export default {
   updateGejala,
   deleteGejala,
   createClinicAdmin,
+  getPublicTicket,
+  checkPublicTicket,
 };

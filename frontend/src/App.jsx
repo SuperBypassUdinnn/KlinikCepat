@@ -7,6 +7,8 @@ import CariKlinik from "./pages/Patient/CariKlinik";
 import TriageForm from "./pages/Patient/TriageForm";
 import TicketAntrean from "./pages/Patient/TicketAntrean";
 
+import CekTiket from "./pages/Patient/CekTiket";
+
 // Admin Klinik Pages
 import LoginAdmin from "./pages/AdminKlinik/LoginAdmin";
 import DashboardAdmin from "./pages/AdminKlinik/DashboardAdmin";
@@ -27,7 +29,9 @@ function App() {
 
         <Route path="/triage/:klinikId" element={<TriageForm />} />
 
-        <Route path="/ticket" element={<TicketAntrean />} />
+        <Route path="/ticket/:publicToken" element={<TicketAntrean />} />
+
+        <Route path="/cek-tiket" element={<CekTiket />} />
 
         {/* Login */}
         <Route path="/admin/login" element={<LoginAdmin />} />
@@ -60,7 +64,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
+
         <Route
           path="/superadmin/admin-klinik"
           element={

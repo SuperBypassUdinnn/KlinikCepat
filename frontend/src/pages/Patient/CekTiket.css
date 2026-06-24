@@ -1,0 +1,53 @@
+.check-ticket-page {
+  display: flex;
+  min-height: calc(
+    100vh - var(--navbar-height)
+  );
+  align-items: center;
+  justify-content: center;
+}
+
+.check-ticket-card {
+  width: 100%;
+  max-width: 520px;
+}
+
+.check-ticket-card .card-body {
+  padding: var(--space-2xl);
+}
+
+.check-ticket-icon {
+  display: flex;
+  width: 64px;
+  height: 64px;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-lg);
+  border-radius: 50%;
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+  font-size: 1.5rem;
+}
+
+.check-ticket-card h1 {
+  margin-bottom: var(--space-sm);
+  text-align: center;
+}
+
+.check-ticket-subtitle {
+  margin-bottom: var(--space-xl);
+  color: var(--color-gray-500);
+  text-align: center;
+}
+
+.check-ticket-actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+}
+
+@media (max-width: 600px) {
+  .check-ticket-actions {
+    flex-direction: column;
+  }
+}

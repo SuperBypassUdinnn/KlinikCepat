@@ -37,36 +37,82 @@ func withTestClaims(
 func TestHandler_AntreanAndTriage(t *testing.T) {
 	t.Run("Process Triage - Success (Merah)", func(t *testing.T) {
 		repo := NewMockRepository()
+
+		repo.Gejalas["g-1"] = &models.Gejala{
+			ID:           "g-1",
+			NamaGejala:   "Pendarahan Hebat",
+			BobotUrgensi: 10,
+		}
+
 		triageService := services.NewTriageService(repo)
 		h := NewHandler(repo, triageService)
 
-		repo.Gejalas["g-1"] = &models.Gejala{ID: "g-1", NamaGejala: "Pendarahan Hebat", BobotUrgensi: 10}
+		body := []byte(`{
+		"klinik_id": "k-1",
+		"nama_pasien": "Budi Santoso",
+		"email_pasien": "pasien@example.com",
+		"gejala": [
+			{
+				"gejala_id": "g-1",
+				"skala_keparahan": 2
+			}
+		]
+	}`)
 
-		reqPayload := models.TriageRequest{
-			KlinikID:   "k-1",
-			NamaPasien: "Budi Santoso",
-			Gejala: []models.GejalaInput{
-				{GejalaID: "g-1", SkalaKeparahan: 2}, // Bobot 10 * 2 = 20 (Merah)
-			},
-		}
+		req := httptest.NewRequest(
+			http.MethodPost,
+			"/api/v1/triage",
+			bytes.NewReader(body),
+		)
 
-		body, _ := json.Marshal(reqPayload)
-		req := httptest.NewRequest("POST", "/api/v1/triage", bytes.NewBuffer(body))
+		req.Header.Set(
+			"Content-Type",
+			"application/json",
+		)
+
 		rr := httptest.NewRecorder()
 
 		h.ProcessTriage(rr, req)
 
 		if rr.Code != http.StatusCreated {
-			t.Errorf("StatusCode = %v, want %v", rr.Code, http.StatusCreated)
+			t.Fatalf(
+				"StatusCode = %d, want %d; response body = %s",
+				rr.Code,
+				http.StatusCreated,
+				rr.Body.String(),
+			)
 		}
 
 		var res models.TriageResponse
-		_ = json.NewDecoder(rr.Body).Decode(&res)
-		if res.StatusTriage != "Merah" {
-			t.Errorf("StatusTriage = %v, want 'Merah'", res.StatusTriage)
+
+		if err := json.NewDecoder(rr.Body).Decode(&res); err != nil {
+			t.Fatalf(
+				"gagal membaca response: %v",
+				err,
+			)
 		}
+
+		if res.StatusTriage != "Merah" {
+			t.Errorf(
+				"StatusTriage = %q, want %q",
+				res.StatusTriage,
+				"Merah",
+			)
+		}
+
 		if res.TotalSkor != 20 {
-			t.Errorf("TotalSkor = %v, want 20", res.TotalSkor)
+			t.Errorf(
+				"TotalSkor = %d, want 20",
+				res.TotalSkor,
+			)
+		}
+
+		if res.KodeTiket == "" {
+			t.Error("KodeTiket tidak boleh kosong")
+		}
+
+		if res.PublicToken == "" {
+			t.Error("PublicToken tidak boleh kosong")
 		}
 	})
 
