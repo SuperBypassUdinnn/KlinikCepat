@@ -12,9 +12,9 @@ import (
 	"KlinikCepat/internal/services"
 )
 
-// InviteClinicAdmin menangani:
-// POST /api/v1/superadmin/admin-klinik/invite
-func (h *Handler) InviteClinicAdmin(
+// CreateClinicAdmin menangani:
+// POST /api/v1/superadmin/admin-klinik
+func (h *Handler) CreateClinicAdmin(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
@@ -27,7 +27,6 @@ func (h *Handler) InviteClinicAdmin(
 		return
 	}
 
-	// Batasi ukuran payload agar request tidak berlebihan.
 	r.Body = http.MaxBytesReader(
 		w,
 		r.Body,
@@ -37,7 +36,7 @@ func (h *Handler) InviteClinicAdmin(
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 
-	var payload models.InviteClinicAdminRequest
+	var payload models.CreateClinicAdminRequest
 
 	if err := decoder.Decode(&payload); err != nil {
 		writeClinicAdminError(
@@ -48,7 +47,6 @@ func (h *Handler) InviteClinicAdmin(
 		return
 	}
 
-	// Pastikan body hanya berisi satu objek JSON.
 	if err := decoder.Decode(&struct{}{}); err != io.EOF {
 		writeClinicAdminError(
 			w,
@@ -58,13 +56,13 @@ func (h *Handler) InviteClinicAdmin(
 		return
 	}
 
-	result, err := h.ClinicAdminService.InviteClinicAdmin(
+	result, err := h.ClinicAdminService.CreateClinicAdmin(
 		r.Context(),
 		payload.Email,
 		payload.KlinikID,
 	)
 	if err != nil {
-		handleClinicAdminInviteError(w, err)
+		handleClinicAdminCreateError(w, err)
 		return
 	}
 
@@ -75,7 +73,7 @@ func (h *Handler) InviteClinicAdmin(
 	)
 }
 
-func handleClinicAdminInviteError(
+func handleClinicAdminCreateError(
 	w http.ResponseWriter,
 	err error,
 ) {
@@ -111,11 +109,11 @@ func handleClinicAdminInviteError(
 		)
 
 	default:
-		handleSupabaseInviteError(w, err)
+		handleSupabaseCreateError(w, err)
 	}
 }
 
-func handleSupabaseInviteError(
+func handleSupabaseCreateError(
 	w http.ResponseWriter,
 	err error,
 ) {

@@ -44,15 +44,16 @@ func (s *clinicAdminRepoStub) CreateUserAccess(
 }
 
 type supabaseAdminStub struct {
-	invitedUser *models.InvitedAuthUser
+	invitedUser *models.CreatedAuthUser
 	inviteErr   error
 	deletedID   string
 }
 
-func (s *supabaseAdminStub) InviteUser(
+func (s *supabaseAdminStub) CreateUser(
 	ctx context.Context,
 	email string,
-) (*models.InvitedAuthUser, error) {
+	password string,
+) (*models.CreatedAuthUser, error) {
 	if s.inviteErr != nil {
 		return nil, s.inviteErr
 	}
@@ -82,7 +83,7 @@ func newClinicAdminHandlerForTest(
 	}
 }
 
-func TestInviteClinicAdminSuccess(
+func TestCreateClinicAdminSuccess(
 	t *testing.T,
 ) {
 	repo := &clinicAdminRepoStub{
@@ -93,7 +94,7 @@ func TestInviteClinicAdminSuccess(
 	}
 
 	auth := &supabaseAdminStub{
-		invitedUser: &models.InvitedAuthUser{
+		invitedUser: &models.CreatedAuthUser{
 			ID:    "user-001",
 			Email: "admin@klinik.com",
 		},
@@ -104,7 +105,7 @@ func TestInviteClinicAdminSuccess(
 		auth,
 	)
 
-	payload := models.InviteClinicAdminRequest{
+	payload := models.CreateClinicAdminRequest{
 		Email:    "admin@klinik.com",
 		KlinikID: "clinic-001",
 	}
@@ -125,7 +126,7 @@ func TestInviteClinicAdminSuccess(
 
 	recorder := httptest.NewRecorder()
 
-	handler.InviteClinicAdmin(
+	handler.CreateClinicAdmin(
 		recorder,
 		request,
 	)
@@ -159,9 +160,27 @@ func TestInviteClinicAdminSuccess(
 			"expected klinik ID clinic-001",
 		)
 	}
+
+	var response models.CreateClinicAdminResponse
+
+	if err := json.Unmarshal(
+		recorder.Body.Bytes(),
+		&response,
+	); err != nil {
+		t.Fatalf(
+			"gagal membaca response: %v",
+			err,
+		)
+	}
+
+	if response.TemporaryPassword == "" {
+		t.Fatal(
+			"expected temporary password dikembalikan",
+		)
+	}
 }
 
-func TestInviteClinicAdminInvalidEmail(
+func TestCreateClinicAdminInvalidEmail(
 	t *testing.T,
 ) {
 	repo := &clinicAdminRepoStub{
@@ -192,7 +211,7 @@ func TestInviteClinicAdminInvalidEmail(
 
 	recorder := httptest.NewRecorder()
 
-	handler.InviteClinicAdmin(
+	handler.CreateClinicAdmin(
 		recorder,
 		request,
 	)
@@ -207,7 +226,7 @@ func TestInviteClinicAdminInvalidEmail(
 	}
 }
 
-func TestInviteClinicAdminClinicNotFound(
+func TestCreateClinicAdminClinicNotFound(
 	t *testing.T,
 ) {
 	repo := &clinicAdminRepoStub{}
@@ -234,7 +253,7 @@ func TestInviteClinicAdminClinicNotFound(
 
 	recorder := httptest.NewRecorder()
 
-	handler.InviteClinicAdmin(
+	handler.CreateClinicAdmin(
 		recorder,
 		request,
 	)

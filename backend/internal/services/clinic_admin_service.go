@@ -2,8 +2,10 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
+	"math/big"
 	"net/mail"
 	"strings"
 
@@ -44,13 +46,13 @@ func NewClinicAdminService(
 	}
 }
 
-// InviteClinicAdmin mengundang user Supabase dan
-// mengaitkannya dengan sebuah klinik.
-func (s *ClinicAdminService) InviteClinicAdmin(
+// CreateClinicAdmin membuat akun awal Admin Klinik,
+// menghasilkan password sementara, lalu menyimpan role.
+func (s *ClinicAdminService) CreateClinicAdmin(
 	ctx context.Context,
 	email string,
 	klinikID string,
-) (*models.InviteClinicAdminResponse, error) {
+) (*models.CreateClinicAdminResponse, error) {
 	normalizedEmail, err := normalizeEmail(email)
 	if err != nil {
 		return nil, err
@@ -76,16 +78,26 @@ func (s *ClinicAdminService) InviteClinicAdmin(
 		)
 	}
 
-	invitedUser, err := s.supabaseAdmin.InviteUser(
+	temporaryPassword, err :=
+		generateTemporaryPassword(14)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"gagal menghasilkan password sementara: %w",
+			err,
+		)
+	}
+
+	createdUser, err := s.supabaseAdmin.CreateUser(
 		ctx,
 		normalizedEmail,
+		temporaryPassword,
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	access := &models.UserAccess{
-		UserID:   invitedUser.ID,
+		UserID:   createdUser.ID,
 		Role:     "klinik_admin",
 		KlinikID: &klinikID,
 	}
@@ -97,13 +109,13 @@ func (s *ClinicAdminService) InviteClinicAdmin(
 	if err != nil {
 		cleanupErr := s.supabaseAdmin.DeleteUser(
 			ctx,
-			invitedUser.ID,
+			createdUser.ID,
 		)
 
 		if cleanupErr != nil {
 			return nil, fmt.Errorf(
 				"gagal menyimpan role Admin Klinik: %v; "+
-					"rollback user Supabase juga gagal: %w",
+					"rollback akun Supabase juga gagal: %w",
 				err,
 				cleanupErr,
 			)
@@ -115,12 +127,13 @@ func (s *ClinicAdminService) InviteClinicAdmin(
 		)
 	}
 
-	return &models.InviteClinicAdminResponse{
-		Message:  "Undangan Admin Klinik berhasil dikirim",
-		UserID:   invitedUser.ID,
-		Email:    invitedUser.Email,
-		Role:     "klinik_admin",
-		KlinikID: klinikID,
+	return &models.CreateClinicAdminResponse{
+		Message:           "Akun Admin Klinik berhasil dibuat",
+		UserID:            createdUser.ID,
+		Email:             createdUser.Email,
+		TemporaryPassword: temporaryPassword,
+		Role:              "klinik_admin",
+		KlinikID:          klinikID,
 	}, nil
 }
 
@@ -139,4 +152,88 @@ func normalizeEmail(value string) (string, error) {
 	}
 
 	return strings.ToLower(address.Address), nil
+}
+
+const (
+	passwordLowercase = "abcdefghijkmnopqrstuvwxyz"
+	passwordUppercase = "ABCDEFGHJKLMNPQRSTUVWXYZ"
+	passwordDigits    = "23456789"
+	passwordSymbols   = "!@#$%&*"
+)
+
+func generateTemporaryPassword(
+	length int,
+) (string, error) {
+	if length < 12 {
+		length = 12
+	}
+
+	characterGroups := []string{
+		passwordLowercase,
+		passwordUppercase,
+		passwordDigits,
+		passwordSymbols,
+	}
+
+	password := make([]byte, 0, length)
+
+	// Pastikan minimal ada huruf kecil, huruf besar,
+	// angka, dan simbol.
+	for _, group := range characterGroups {
+		character, err := secureRandomCharacter(group)
+		if err != nil {
+			return "", err
+		}
+
+		password = append(password, character)
+	}
+
+	allCharacters :=
+		passwordLowercase +
+			passwordUppercase +
+			passwordDigits +
+			passwordSymbols
+
+	for len(password) < length {
+		character, err :=
+			secureRandomCharacter(allCharacters)
+		if err != nil {
+			return "", err
+		}
+
+		password = append(password, character)
+	}
+
+	// Acak posisi karakter agar pola karakter wajib
+	// tidak selalu muncul di awal.
+	for index := len(password) - 1; index > 0; index-- {
+		randomIndex, err := rand.Int(
+			rand.Reader,
+			big.NewInt(int64(index+1)),
+		)
+		if err != nil {
+			return "", err
+		}
+
+		target := int(randomIndex.Int64())
+
+		password[index], password[target] =
+			password[target], password[index]
+	}
+
+	return string(password), nil
+}
+
+func secureRandomCharacter(
+	characters string,
+) (byte, error) {
+	randomIndex, err := rand.Int(
+		rand.Reader,
+		big.NewInt(int64(len(characters))),
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return characters[randomIndex.Int64()], nil
 }

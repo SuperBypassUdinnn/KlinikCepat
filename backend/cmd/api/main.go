@@ -40,13 +40,6 @@ func main() {
 		os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
 	)
 
-	frontendURL := strings.TrimRight(
-		strings.TrimSpace(
-			os.Getenv("FRONTEND_URL"),
-		),
-		"/",
-	)
-
 	if supabaseURL == "" {
 		log.Fatal(
 			"FATAL ERROR: SUPABASE_URL tidak disetel",
@@ -56,12 +49,6 @@ func main() {
 	if serviceRoleKey == "" {
 		log.Fatal(
 			"FATAL ERROR: SUPABASE_SERVICE_ROLE_KEY tidak disetel",
-		)
-	}
-
-	if frontendURL == "" {
-		log.Fatal(
-			"FATAL ERROR: FRONTEND_URL tidak disetel",
 		)
 	}
 
@@ -90,7 +77,6 @@ func main() {
 		services.NewSupabaseAdminService(
 			supabaseURL,
 			serviceRoleKey,
-			frontendURL+"/admin/set-password",
 			nil,
 		)
 
@@ -160,8 +146,8 @@ func main() {
 
 			// Manajemen akun Admin Klinik
 			r.Post(
-				"/superadmin/admin-klinik/invite",
-				h.InviteClinicAdmin,
+				"/superadmin/admin-klinik",
+				h.CreateClinicAdmin,
 			)
 		})
 

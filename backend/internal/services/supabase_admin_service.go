@@ -17,10 +17,11 @@ import (
 // SupabaseAdminClient mendefinisikan operasi administratif
 // Supabase Auth yang digunakan aplikasi.
 type SupabaseAdminClient interface {
-	InviteUser(
+	CreateUser(
 		ctx context.Context,
 		email string,
-	) (*models.InvitedAuthUser, error)
+		password string,
+	) (*models.CreatedAuthUser, error)
 
 	DeleteUser(
 		ctx context.Context,
@@ -32,7 +33,6 @@ type SupabaseAdminClient interface {
 type SupabaseAdminService struct {
 	supabaseURL string
 	serviceKey  string
-	redirectURL string
 	httpClient  *http.Client
 }
 
@@ -65,7 +65,6 @@ func (e *SupabaseAdminAPIError) Error() string {
 func NewSupabaseAdminService(
 	supabaseURL string,
 	serviceKey string,
-	redirectURL string,
 	httpClient *http.Client,
 ) *SupabaseAdminService {
 	if httpClient == nil {
@@ -79,38 +78,29 @@ func NewSupabaseAdminService(
 			supabaseURL,
 			"/",
 		),
-		serviceKey:  serviceKey,
-		redirectURL: redirectURL,
-		httpClient:  httpClient,
+		serviceKey: serviceKey,
+		httpClient: httpClient,
 	}
 }
 
-// InviteUser membuat user Supabase Auth dan
-// mengirim email undangan.
-func (s *SupabaseAdminService) InviteUser(
+// CreateUser membuat akun Supabase Auth secara langsung
+// tanpa mengirim email undangan.
+func (s *SupabaseAdminService) CreateUser(
 	ctx context.Context,
 	email string,
-) (*models.InvitedAuthUser, error) {
-	endpoint, err := url.Parse(
-		s.supabaseURL + "/auth/v1/invite",
-	)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"gagal membentuk URL Supabase: %w",
-			err,
-		)
-	}
+	password string,
+) (*models.CreatedAuthUser, error) {
+	endpoint := s.supabaseURL +
+		"/auth/v1/admin/users"
 
-	query := endpoint.Query()
-	query.Set("redirect_to", s.redirectURL)
-	endpoint.RawQuery = query.Encode()
-
-	body, err := json.Marshal(map[string]string{
-		"email": email,
+	body, err := json.Marshal(map[string]any{
+		"email":         email,
+		"password":      password,
+		"email_confirm": true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf(
-			"gagal membuat payload undangan: %w",
+			"gagal membuat payload user: %w",
 			err,
 		)
 	}
@@ -118,12 +108,12 @@ func (s *SupabaseAdminService) InviteUser(
 	request, err := http.NewRequestWithContext(
 		ctx,
 		http.MethodPost,
-		endpoint.String(),
+		endpoint,
 		bytes.NewReader(body),
 	)
 	if err != nil {
 		return nil, fmt.Errorf(
-			"gagal membuat request undangan: %w",
+			"gagal membuat request user: %w",
 			err,
 		)
 	}
@@ -144,11 +134,15 @@ func (s *SupabaseAdminService) InviteUser(
 		return nil, decodeSupabaseAdminError(response)
 	}
 
-	var invitedUser models.InvitedAuthUser
+	var responsePayload struct {
+		ID    string                  `json:"id"`
+		Email string                  `json:"email"`
+		User  *models.CreatedAuthUser `json:"user"`
+	}
 
 	err = json.NewDecoder(
 		io.LimitReader(response.Body, 1<<20),
-	).Decode(&invitedUser)
+	).Decode(&responsePayload)
 	if err != nil {
 		return nil, fmt.Errorf(
 			"gagal membaca respons Supabase: %w",
@@ -156,13 +150,26 @@ func (s *SupabaseAdminService) InviteUser(
 		)
 	}
 
-	if invitedUser.ID == "" {
+	var createdUser models.CreatedAuthUser
+
+	if responsePayload.User != nil {
+		createdUser = *responsePayload.User
+	} else {
+		createdUser.ID = responsePayload.ID
+		createdUser.Email = responsePayload.Email
+	}
+
+	if createdUser.ID == "" {
 		return nil, fmt.Errorf(
 			"Supabase tidak mengembalikan user ID",
 		)
 	}
 
-	return &invitedUser, nil
+	if createdUser.Email == "" {
+		createdUser.Email = email
+	}
+
+	return &createdUser, nil
 }
 
 // DeleteUser menghapus user Supabase Auth.
