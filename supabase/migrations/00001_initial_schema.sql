@@ -1,5 +1,5 @@
 -- Tabel untuk menyimpan entitas penyewa (Klinik)
-CREATE TABLE klinik (
+CREATE TABLE IF NOT EXISTS klinik (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nama_klinik VARCHAR(255) NOT NULL,
     lat FLOAT NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE klinik (
 );
 
 -- Tabel untuk katalog referensi bobot urgensi gejala
-CREATE TABLE katalog_gejala (
+CREATE TABLE IF NOT EXISTS katalog_gejala (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nama_gejala VARCHAR(255) NOT NULL,
     bobot_urgensi INT NOT NULL CHECK (bobot_urgensi >= 0 AND bobot_urgensi <= 10),
@@ -21,7 +21,7 @@ CREATE TYPE status_triage_enum AS ENUM ('Merah', 'Kuning', 'Hijau');
 CREATE TYPE status_antrean_enum AS ENUM ('Menunggu', 'Selesai', 'Dilewati');
 
 -- Tabel jantung operasional aplikasi: Antrean Pasien
-CREATE TABLE antrean (
+CREATE TABLE IF NOT EXISTS antrean (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     klinik_id UUID NOT NULL REFERENCES klinik(id) ON DELETE CASCADE,
     nama_pasien VARCHAR(255) NOT NULL,
